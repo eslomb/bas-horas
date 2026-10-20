@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="75efff672a684f829fe40f6ef9233bbf" Name="Diagram1">
+        <EntityTypeShape EntityType="BASHorasModel.PAISES" Width="1.5" PointX="10.125" PointY="0.625" />
+        <EntityTypeShape EntityType="BASHorasModel.ACTIVIDADES" Width="1.5" PointX="5.5" PointY="3.125" />
+        <EntityTypeShape EntityType="BASHorasModel.PRODUCTOS" Width="1.5" PointX="5.5" PointY="0.5" />
+        <EntityTypeShape EntityType="BASHorasModel.REGISTROS" Width="1.5" PointX="7.75" PointY="0.875" />
+        <AssociationConnector Association="BASHorasModel.FK_REGISTROS_ACTIVIDADES" />
+        <AssociationConnector Association="BASHorasModel.FK_REGISTROS_PRODUCTOS" />
+        <AssociationConnector Association="BASHorasModel.FK_REGISTROS_PAISES" />
+        <EntityTypeShape EntityType="BASHorasModel.vRegistros" Width="1.5" PointX="7.75" PointY="5.375" />
+        <EntityTypeShape EntityType="BASHorasModel.CONFIGURACIONES" Width="1.5" PointX="0.75" PointY="0.75" />
+        <EntityTypeShape EntityType="BASHorasModel.CENTROS" Width="1.5" PointX="0.75" PointY="2.5" />
+        <EntityTypeShape EntityType="BASHorasModel.REPORTES" Width="1.5" PointX="0.75" PointY="4.75" />
+        <EntityTypeShape EntityType="BASHorasModel.FERIADOS" Width="1.5" PointX="12.625" PointY="0.5" />
+        <EntityTypeShape EntityType="BASHorasModel.REMUNERACIONES" Width="1.5" PointX="12.625" PointY="2.25" />
+        <EntityTypeShape EntityType="BASHorasModel.DIAS_HABILES" Width="1.5" PointX="3.375" PointY="6.75" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

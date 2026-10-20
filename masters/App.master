@@ -1,0 +1,125 @@
+﻿<%@ Master Language="VB" CodeFile="App.master.vb" Inherits="masters_App" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server" id="head">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="~/favicon.ico">
+
+    <title>BAS Horas</title>
+    <!-- los recursos se agregan por programacion -->
+</head>
+
+<body class="app">
+    <form runat="server" id="form1">
+        
+        <ajaxToolkit:ToolkitScriptManager ID="ToolkitScriptManager1" runat="server" CombineScripts="true" ScriptMode="Release"></ajaxToolkit:ToolkitScriptManager>
+        
+        <!-- Fixed navbar -->
+        <nav class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Menú</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">
+                        <asp:Image ID="img_logo" runat="server" ImageUrl="~/app/img/logoBAS.jpg" AlternateText="logo" /> 
+                    </a>
+                    <small id="version">v. 1.6.0</small>
+                </div>
+
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li runat="server" id="li_horas"><a href="cargar_horas.aspx">Carga</a></li>
+                        <li runat="server" id="li_password"><a href="password.aspx">Mi Contraseña</a></li>
+                        <li runat="server" id="li_reportes"><a href="reportes.aspx">Reportes</a></li>
+                        <li runat="server" id="li_analisis" class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Análisis</a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="analisis.aspx?concepto=producto">Actividades por Producto</a></li>
+                                <li><a href="analisis.aspx?concepto=pais">Actividades por País</a></li>
+                                <li><a href="analisis.aspx?concepto=usuario">Actividades por Usuario</a></li>
+                            </ul>
+                        </li>
+                        
+                        <li runat="server" id="li_usuarios_dependientes"><a href="usuarios-dependientes.aspx">Usuarios</a></li>
+                        <li runat="server" id="li_administrar" class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Administrar <span class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="productos.aspx">Productos</a></li>
+                                <li><a href="actividades.aspx">Actividades</a></li>
+                                <li><a href="paises.aspx">Paises</a></li>
+                                <li><a href="centros.aspx">Centros</a></li>
+                                <li><a href="dias_habiles.aspx">Días hábiles</a></li>
+                                <li><a href="feriados.aspx">Feriados</a></li>
+                                <li class="divider"></li>
+                                <li><a href="usuarios.aspx">Usuarios</a></li>
+                                <li runat="server" id="li_remuneraciones"><a href="remuneraciones.aspx">Remuneraciones</a></li>
+                                <li><a href="configuraciones.aspx">Configuraciones</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><asp:LinkButton ID="lb_salir" runat="server" CausesValidation="false">
+                            <asp:Literal ID="l_Usuario" runat="server" /> - 
+                            <i class="fa  fa-power-off tooltips" data-original-title="Cerrar sesión" data-placement="bottom" ></i></asp:LinkButton>
+                        </li>
+                    </ul>
+                </div>
+                <!--/.nav-collapse -->
+                <asp:UpdateProgress ID="updPrg_carga" runat="server" ClientIDMode="Static">
+                      <ProgressTemplate><span><asp:Image ID="img_spinner" ImageUrl="~/app/img/spinner-broken-circ.gif" AlternateText="Cargando" runat="server" /></span></ProgressTemplate>
+                </asp:UpdateProgress>
+              
+            </div>
+        </nav>
+
+        <div class="container">
+            <asp:ContentPlaceHolder id="cph_contenido" runat="server"></asp:ContentPlaceHolder>
+      
+        </div> <!-- /container -->
+        
+  
+    <!-- Validation Summary Modal -->
+    <div class="modal fade" id="validation_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+          <div class="modal-content-wrap">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                      <h4 class="modal-title">Revisar datos ingresados</h4>
+                  </div>
+                  <div class="modal-body">
+
+                    <asp:ValidationSummary ID="ValidationSummary2" runat="server" ForeColor="Black" />
+
+                  </div>
+                  <div class="modal-footer">
+                      <button data-dismiss="modal" class="btn btn-default" type="button">Aceptar</button>
+                  </div>
+              </div>
+
+          </div>
+      </div>
+    </div>
+    <!-- /.modal -->
+</form>
+<script>
+    function WebForm_OnSubmit() { // sobreescribe la funcion para usar el mensaje de validation en un modal
+        if (typeof (ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) {
+            $("#validation_modal").modal();
+            return false;
+        }
+        return true;
+    }
+</script>
+
+</body>
+</html>
+

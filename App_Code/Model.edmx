@@ -1,0 +1,658 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="BASHorasModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="ACTIVIDADES">
+          <Key>
+            <PropertyRef Name="IDAct" />
+          </Key>
+          <Property Name="IDAct" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Codigo" Type="varchar" MaxLength="10" Nullable="false" />
+          <Property Name="Actividad" Type="nvarchar" MaxLength="400" Nullable="false" />
+          <Property Name="Habilitada" Type="bit" />
+        </EntityType>
+        <EntityType Name="CENTROS">
+          <Key>
+            <PropertyRef Name="CodCen" />
+          </Key>
+          <Property Name="CodCen" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="Nombre" Type="nvarchar" MaxLength="50" Nullable="false" />
+        </EntityType>
+        <EntityType Name="CONFIGURACIONES">
+          <Key>
+            <PropertyRef Name="CodConfig" />
+          </Key>
+          <Property Name="CodConfig" Type="nvarchar" MaxLength="20" Nullable="false" />
+          <Property Name="Valor" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="Descripcion" Type="nvarchar" MaxLength="150" />
+        </EntityType>
+        <EntityType Name="DIAS_HABILES">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Anio" Type="int" Nullable="false" />
+          <Property Name="Mes" Type="int" Nullable="false" />
+          <Property Name="CantDias" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="FERIADOS">
+          <Key>
+            <PropertyRef Name="Feriado" />
+          </Key>
+          <Property Name="Feriado" Type="date" Nullable="false" />
+          <Property Name="Motivo" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="PAISES">
+          <Key>
+            <PropertyRef Name="Codigo" />
+          </Key>
+          <Property Name="Codigo" Type="nchar" MaxLength="2" Nullable="false" />
+          <Property Name="Pais" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Preferido" Type="bit" />
+        </EntityType>
+        <EntityType Name="PRODUCTOS">
+          <Key>
+            <PropertyRef Name="IDPro" />
+          </Key>
+          <Property Name="IDPro" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Codigo" Type="varchar" MaxLength="10" Nullable="false" />
+          <Property Name="Producto" Type="nvarchar" MaxLength="400" Nullable="false" />
+          <Property Name="Activo" Type="bit" Nullable="false" />
+          <Property Name="FProyIni" Type="date" />
+          <Property Name="FProyFin" Type="date" />
+        </EntityType>
+        <EntityType Name="REGISTROS">
+          <Key>
+            <PropertyRef Name="IDReg" />
+          </Key>
+          <Property Name="IDReg" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="idProducto" Type="int" Nullable="false" />
+          <Property Name="idActividad" Type="int" Nullable="false" />
+          <Property Name="Usuario" Type="nvarchar" MaxLength="256" Nullable="false" />
+          <Property Name="Fecha" Type="datetime" Nullable="false" />
+          <Property Name="Horas" Type="int" Nullable="false" />
+          <Property Name="Minutos" Type="int" Nullable="false" />
+          <Property Name="CodPais" Type="nchar" MaxLength="2" />
+          <Property Name="Observaciones" Type="nvarchar" MaxLength="400" />
+          <Property Name="ModtempDVY570" Type="int" />
+        </EntityType>
+        <EntityType Name="REMUNERACIONES">
+          <Key>
+            <PropertyRef Name="IDRem" />
+          </Key>
+          <Property Name="IDRem" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Mes" Type="smallint" Nullable="false" />
+          <Property Name="Anio" Type="smallint" Nullable="false" />
+          <Property Name="Remuneracion" Type="decimal" Precision="18" Scale="2" Nullable="false" />
+          <Property Name="Usuario" Type="nvarchar" MaxLength="250" Nullable="false" />
+          <Property Name="Legajo" Type="nvarchar" MaxLength="10" />
+        </EntityType>
+        <EntityType Name="REPORTES">
+          <Key>
+            <PropertyRef Name="IDRep" />
+          </Key>
+          <Property Name="IDRep" Type="uniqueidentifier" Nullable="false" />
+          <Property Name="Titulo" Type="nvarchar" MaxLength="150" Nullable="false" />
+          <Property Name="Usuario" Type="nvarchar" MaxLength="256" Nullable="false" />
+          <Property Name="Desde" Type="date" />
+          <Property Name="Hasta" Type="date" />
+          <Property Name="Actividad_id" Type="int" />
+          <Property Name="Producto_id" Type="int" />
+          <Property Name="CodPais" Type="nchar" MaxLength="2" />
+          <Property Name="DeUsuario" Type="nvarchar" MaxLength="250" />
+          <Property Name="DeCentro" Type="varchar" MaxLength="50" />
+        </EntityType>
+        <!--Errores durante la generación:
+advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida ninguna clave principal. Se ha inferido la clave y la definición se creado como una vista o tabla de solo lectura.-->
+        <EntityType Name="vRegistros">
+          <Key>
+            <PropertyRef Name="IDReg" />
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+          </Key>
+          <Property Name="IDReg" Type="int" Nullable="false" />
+          <Property Name="idProducto" Type="int" Nullable="false" />
+          <Property Name="idActividad" Type="int" Nullable="false" />
+          <Property Name="Usuario" Type="nvarchar" MaxLength="256" Nullable="false" />
+          <Property Name="Fecha" Type="datetime" Nullable="false" />
+          <Property Name="Horas" Type="int" Nullable="false" />
+          <Property Name="Minutos" Type="int" Nullable="false" />
+          <Property Name="CodPais" Type="nchar" MaxLength="2" />
+          <Property Name="Observaciones" Type="nchar" MaxLength="10" />
+          <Property Name="Codigo" Type="varchar" MaxLength="10" Nullable="false" />
+          <Property Name="Actividad" Type="nvarchar" MaxLength="400" Nullable="false" />
+          <Property Name="Pais" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="CodProducto" Type="varchar" MaxLength="10" Nullable="false" />
+          <Property Name="Producto" Type="nvarchar" MaxLength="400" Nullable="false" />
+        </EntityType>
+        <Association Name="FK_REGISTROS_ACTIVIDADES">
+          <End Role="ACTIVIDADES" Type="Self.ACTIVIDADES" Multiplicity="1" />
+          <End Role="REGISTROS" Type="Self.REGISTROS" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ACTIVIDADES">
+              <PropertyRef Name="IDAct" />
+            </Principal>
+            <Dependent Role="REGISTROS">
+              <PropertyRef Name="idActividad" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_REGISTROS_PAISES">
+          <End Role="PAISES" Type="Self.PAISES" Multiplicity="0..1" />
+          <End Role="REGISTROS" Type="Self.REGISTROS" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PAISES">
+              <PropertyRef Name="Codigo" />
+            </Principal>
+            <Dependent Role="REGISTROS">
+              <PropertyRef Name="CodPais" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_REGISTROS_PRODUCTOS">
+          <End Role="PRODUCTOS" Type="Self.PRODUCTOS" Multiplicity="1" />
+          <End Role="REGISTROS" Type="Self.REGISTROS" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PRODUCTOS">
+              <PropertyRef Name="IDPro" />
+            </Principal>
+            <Dependent Role="REGISTROS">
+              <PropertyRef Name="idProducto" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Function Name="spAnalisisActividades" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="concepto" Type="varchar" Mode="In" />
+          <Parameter Name="Desde" Type="char" Mode="In" />
+          <Parameter Name="Hasta" Type="char" Mode="In" />
+        </Function>
+        <Function Name="spFechasUltimasTareas" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="usuario" Type="nvarchar" Mode="In" />
+          <Parameter Name="cant" Type="int" Mode="In" />
+        </Function>
+        <Function Name="spReporteGeneral" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="Desde" Type="date" Mode="In" />
+          <Parameter Name="Hasta" Type="date" Mode="In" />
+          <Parameter Name="Usuario" Type="nvarchar" Mode="In" />
+          <Parameter Name="IdProd" Type="int" Mode="In" />
+          <Parameter Name="IdAct" Type="int" Mode="In" />
+          <Parameter Name="CodPais" Type="nchar" Mode="In" />
+        </Function>
+        <EntityContainer Name="BASHorasModelStoreContainer">
+          <EntitySet Name="ACTIVIDADES" EntityType="Self.ACTIVIDADES" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="CENTROS" EntityType="Self.CENTROS" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="CONFIGURACIONES" EntityType="Self.CONFIGURACIONES" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="DIAS_HABILES" EntityType="Self.DIAS_HABILES" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="FERIADOS" EntityType="Self.FERIADOS" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PAISES" EntityType="Self.PAISES" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PRODUCTOS" EntityType="Self.PRODUCTOS" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="REGISTROS" EntityType="Self.REGISTROS" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="REMUNERACIONES" EntityType="Self.REMUNERACIONES" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="REPORTES" EntityType="Self.REPORTES" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="vRegistros" EntityType="Self.vRegistros" store:Type="Views" store:Schema="dbo">
+            <DefiningQuery>SELECT 
+    [vRegistros].[IDReg] AS [IDReg], 
+    [vRegistros].[idProducto] AS [idProducto], 
+    [vRegistros].[idActividad] AS [idActividad], 
+    [vRegistros].[Usuario] AS [Usuario], 
+    [vRegistros].[Fecha] AS [Fecha], 
+    [vRegistros].[Horas] AS [Horas], 
+    [vRegistros].[Minutos] AS [Minutos], 
+    [vRegistros].[CodPais] AS [CodPais], 
+    [vRegistros].[Observaciones] AS [Observaciones], 
+    [vRegistros].[Codigo] AS [Codigo], 
+    [vRegistros].[Actividad] AS [Actividad], 
+    [vRegistros].[Pais] AS [Pais], 
+    [vRegistros].[CodProducto] AS [CodProducto], 
+    [vRegistros].[Producto] AS [Producto]
+    FROM [dbo].[vRegistros] AS [vRegistros]</DefiningQuery>
+          </EntitySet>
+          <AssociationSet Name="FK_REGISTROS_ACTIVIDADES" Association="Self.FK_REGISTROS_ACTIVIDADES">
+            <End Role="ACTIVIDADES" EntitySet="ACTIVIDADES" />
+            <End Role="REGISTROS" EntitySet="REGISTROS" />
+          </AssociationSet>
+          <AssociationSet Name="FK_REGISTROS_PAISES" Association="Self.FK_REGISTROS_PAISES">
+            <End Role="PAISES" EntitySet="PAISES" />
+            <End Role="REGISTROS" EntitySet="REGISTROS" />
+          </AssociationSet>
+          <AssociationSet Name="FK_REGISTROS_PRODUCTOS" Association="Self.FK_REGISTROS_PRODUCTOS">
+            <End Role="PRODUCTOS" EntitySet="PRODUCTOS" />
+            <End Role="REGISTROS" EntitySet="REGISTROS" />
+          </AssociationSet>
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="BASHorasModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="BASHorasEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="PAISES" EntityType="BASHorasModel.PAISES" />
+          <EntitySet Name="ACTIVIDADES" EntityType="BASHorasModel.ACTIVIDADES" />
+          <EntitySet Name="PRODUCTOS" EntityType="BASHorasModel.PRODUCTOS" />
+          <EntitySet Name="REGISTROS" EntityType="BASHorasModel.REGISTROS" />
+          <AssociationSet Name="FK_REGISTROS_ACTIVIDADES" Association="BASHorasModel.FK_REGISTROS_ACTIVIDADES">
+            <End Role="ACTIVIDADES" EntitySet="ACTIVIDADES" />
+            <End Role="REGISTROS" EntitySet="REGISTROS" />
+          </AssociationSet>
+          <AssociationSet Name="FK_REGISTROS_PRODUCTOS" Association="BASHorasModel.FK_REGISTROS_PRODUCTOS">
+            <End Role="PRODUCTOS" EntitySet="PRODUCTOS" />
+            <End Role="REGISTROS" EntitySet="REGISTROS" />
+          </AssociationSet>
+          <AssociationSet Name="FK_REGISTROS_PAISES" Association="BASHorasModel.FK_REGISTROS_PAISES">
+            <End Role="PAISES" EntitySet="PAISES" />
+            <End Role="REGISTROS" EntitySet="REGISTROS" />
+          </AssociationSet>
+          <EntitySet Name="vRegistros" EntityType="BASHorasModel.vRegistros" />
+          <EntitySet Name="CONFIGURACIONES" EntityType="BASHorasModel.CONFIGURACIONES" />
+          <FunctionImport Name="spFechasUltimasTareas" ReturnType="Collection(String)">
+            <Parameter Name="usuario" Mode="In" Type="String" />
+            <Parameter Name="cant" Mode="In" Type="Int32" />
+          </FunctionImport>
+          <EntitySet Name="CENTROS" EntityType="BASHorasModel.CENTROS" />
+          <EntitySet Name="REPORTES" EntityType="BASHorasModel.REPORTES" />
+          <FunctionImport Name="spAnalisisActividades" ReturnType="Collection(BASHorasModel.spAnalisisActividades_Result)">
+            <Parameter Name="concepto" Mode="In" Type="String" />
+            <Parameter Name="Desde" Mode="In" Type="String" />
+            <Parameter Name="Hasta" Mode="In" Type="String" />
+          </FunctionImport>
+          <EntitySet Name="FERIADOS" EntityType="BASHorasModel.FERIADOS" />
+          <EntitySet Name="REMUNERACIONES" EntityType="BASHorasModel.REMUNERACIONES" />
+          <EntitySet Name="DIAS_HABILES" EntityType="BASHorasModel.DIAS_HABILES" />
+          <FunctionImport Name="spReporteGeneral" ReturnType="Collection(BASHorasModel.spReporteGeneral_Result)">
+            <Parameter Name="Desde" Mode="In" Type="DateTime" />
+            <Parameter Name="Hasta" Mode="In" Type="DateTime" />
+            <Parameter Name="Usuario" Mode="In" Type="String" />
+            <Parameter Name="IdProd" Mode="In" Type="Int32" />
+            <Parameter Name="IdAct" Mode="In" Type="Int32" />
+            <Parameter Name="CodPais" Mode="In" Type="String" />
+          </FunctionImport>
+        </EntityContainer>
+        <EntityType Name="PAISES">
+          <Key>
+            <PropertyRef Name="Codigo" />
+          </Key>
+          <Property Name="Codigo" Type="String" Nullable="false" MaxLength="2" FixedLength="true" Unicode="true" />
+          <Property Name="Pais" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Preferido" Type="Boolean" />
+          <NavigationProperty Name="REGISTROS" Relationship="BASHorasModel.FK_REGISTROS_PAISES" FromRole="PAISES" ToRole="REGISTROS" />
+        </EntityType>
+        <EntityType Name="ACTIVIDADES">
+          <Key>
+            <PropertyRef Name="IDAct" />
+          </Key>
+          <Property Name="IDAct" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Codigo" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
+          <Property Name="Actividad" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="REGISTROS" Relationship="BASHorasModel.FK_REGISTROS_ACTIVIDADES" FromRole="ACTIVIDADES" ToRole="REGISTROS" />
+          <Property Name="Habilitada" Type="Boolean" />
+        </EntityType>
+        <EntityType Name="PRODUCTOS">
+          <Key>
+            <PropertyRef Name="IDPro" />
+          </Key>
+          <Property Name="IDPro" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Codigo" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
+          <Property Name="Producto" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
+          <Property Name="Activo" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="REGISTROS" Relationship="BASHorasModel.FK_REGISTROS_PRODUCTOS" FromRole="PRODUCTOS" ToRole="REGISTROS" />
+          <Property Name="FProyIni" Type="DateTime" Precision="0" />
+          <Property Name="FProyFin" Type="DateTime" Precision="0" />
+        </EntityType>
+        <EntityType Name="REGISTROS">
+          <Key>
+            <PropertyRef Name="IDReg" />
+          </Key>
+          <Property Name="IDReg" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="idProducto" Type="Int32" Nullable="false" />
+          <Property Name="idActividad" Type="Int32" Nullable="false" />
+          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Horas" Type="Int32" Nullable="false" />
+          <Property Name="Minutos" Type="Int32" Nullable="false" />
+          <Property Name="CodPais" Type="String" MaxLength="2" FixedLength="true" Unicode="true" />
+          <Property Name="Observaciones" Type="String" MaxLength="400" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="ACTIVIDADES" Relationship="BASHorasModel.FK_REGISTROS_ACTIVIDADES" FromRole="REGISTROS" ToRole="ACTIVIDADES" />
+          <NavigationProperty Name="PRODUCTOS" Relationship="BASHorasModel.FK_REGISTROS_PRODUCTOS" FromRole="REGISTROS" ToRole="PRODUCTOS" />
+          <NavigationProperty Name="PAISES" Relationship="BASHorasModel.FK_REGISTROS_PAISES" FromRole="REGISTROS" ToRole="PAISES" />
+          <Property Name="ModtempDVY570" Type="Int32" />
+        </EntityType>
+        <Association Name="FK_REGISTROS_ACTIVIDADES">
+          <End Type="BASHorasModel.ACTIVIDADES" Role="ACTIVIDADES" Multiplicity="1" />
+          <End Type="BASHorasModel.REGISTROS" Role="REGISTROS" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ACTIVIDADES">
+              <PropertyRef Name="IDAct" />
+            </Principal>
+            <Dependent Role="REGISTROS">
+              <PropertyRef Name="idActividad" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_REGISTROS_PRODUCTOS">
+          <End Type="BASHorasModel.PRODUCTOS" Role="PRODUCTOS" Multiplicity="1" />
+          <End Type="BASHorasModel.REGISTROS" Role="REGISTROS" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PRODUCTOS">
+              <PropertyRef Name="IDPro" />
+            </Principal>
+            <Dependent Role="REGISTROS">
+              <PropertyRef Name="idProducto" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_REGISTROS_PAISES">
+          <End Type="BASHorasModel.PAISES" Role="PAISES" Multiplicity="0..1" />
+          <End Type="BASHorasModel.REGISTROS" Role="REGISTROS" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="PAISES">
+              <PropertyRef Name="Codigo" />
+            </Principal>
+            <Dependent Role="REGISTROS">
+              <PropertyRef Name="CodPais" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="vRegistros">
+          <Key>
+            <PropertyRef Name="IDReg" />
+          </Key>
+          <Property Name="IDReg" Type="Int32" Nullable="false" />
+          <Property Name="idProducto" Type="Int32" Nullable="false" />
+          <Property Name="idActividad" Type="Int32" Nullable="false" />
+          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Horas" Type="Int32" Nullable="false" />
+          <Property Name="Minutos" Type="Int32" Nullable="false" />
+          <Property Name="CodPais" Type="String" MaxLength="2" FixedLength="true" Unicode="true" />
+          <Property Name="Observaciones" Type="String" MaxLength="10" FixedLength="true" Unicode="true" />
+          <Property Name="Codigo" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
+          <Property Name="Actividad" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
+          <Property Name="Pais" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CodProducto" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
+          <Property Name="Producto" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="CONFIGURACIONES">
+          <Key>
+            <PropertyRef Name="CodConfig" />
+          </Key>
+          <Property Name="CodConfig" Type="String" Nullable="false" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="Valor" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="Descripcion" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="CENTROS">
+          <Key>
+            <PropertyRef Name="CodCen" />
+          </Key>
+          <Property Name="CodCen" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="Nombre" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="REPORTES">
+          <Key>
+            <PropertyRef Name="IDRep" />
+          </Key>
+          <Property Name="IDRep" Type="Guid" Nullable="false" />
+          <Property Name="Titulo" Type="String" Nullable="false" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Desde" Type="DateTime" Precision="0" />
+          <Property Name="Hasta" Type="DateTime" Precision="0" />
+          <Property Name="Actividad_id" Type="Int32" />
+          <Property Name="Producto_id" Type="Int32" />
+          <Property Name="CodPais" Type="String" MaxLength="2" FixedLength="true" Unicode="true" />
+          <Property Name="DeUsuario" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="DeCentro" Type="String" MaxLength="50" FixedLength="false" Unicode="false" />
+        </EntityType>
+        <ComplexType Name="spAnalisisActividades_Result">
+          <Property Type="String" Name="ID" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="Concepto" Nullable="true" MaxLength="250" />
+          <Property Type="String" Name="CodActiv" Nullable="true" MaxLength="20" />
+          <Property Type="String" Name="Recuento" Nullable="true" MaxLength="20" />
+        </ComplexType>
+        <EntityType Name="FERIADOS">
+          <Key>
+            <PropertyRef Name="Feriado" />
+          </Key>
+          <Property Name="Feriado" Type="DateTime" Nullable="false" Precision="0" />
+          <Property Name="Motivo" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="REMUNERACIONES">
+          <Key>
+            <PropertyRef Name="IDRem" />
+          </Key>
+          <Property Name="IDRem" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Mes" Type="Int16" Nullable="false" />
+          <Property Name="Anio" Type="Int16" Nullable="false" />
+          <Property Name="Remuneracion" Type="Decimal" Nullable="false" Precision="18" Scale="2" />
+          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Legajo" Type="String" MaxLength="10" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="DIAS_HABILES">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Anio" Type="Int32" Nullable="false" />
+          <Property Name="Mes" Type="Int32" Nullable="false" />
+          <Property Name="CantDias" Type="Int32" Nullable="false" />
+        </EntityType>
+        <ComplexType Name="spReporteGeneral_Result">
+          <Property Type="Int32" Name="IDReg" Nullable="false" />
+          <Property Type="DateTime" Name="FECHA_ACTIVIDAD" Nullable="false" Precision="23" />
+          <Property Type="String" Name="USUARIO" Nullable="true" MaxLength="256" />
+          <Property Type="String" Name="COD_ACTIVIDAD" Nullable="true" MaxLength="10" />
+          <Property Type="String" Name="ACTIVIDAD" Nullable="true" MaxLength="400" />
+          <Property Type="String" Name="PAIS" Nullable="true" MaxLength="2" />
+          <Property Type="Int32" Name="ID_PRODUCTO" Nullable="true" />
+          <Property Type="String" Name="PRODUCTO" Nullable="true" MaxLength="400" />
+          <Property Type="Int32" Name="HORAS" Nullable="false" />
+          <Property Type="Int32" Name="MINUTOS" Nullable="false" />
+          <Property Type="String" Name="OBSERVACIONES" Nullable="true" MaxLength="400" />
+          <Property Type="Int32" Name="LEGAJO" Nullable="true" />
+          <Property Type="Int32" Name="JORNADA" Nullable="true" />
+          <Property Type="Int32" Name="CENTRO" Nullable="true" />
+          <Property Type="Decimal" Name="REMUNERACION" Nullable="true" Precision="18" Scale="2" />
+          <Property Type="Int32" Name="CUIL" Nullable="true" />
+        </ComplexType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="BASHorasModelStoreContainer" CdmEntityContainer="BASHorasEntities">
+          <EntitySetMapping Name="PAISES">
+            <EntityTypeMapping TypeName="BASHorasModel.PAISES">
+              <MappingFragment StoreEntitySet="PAISES">
+                <ScalarProperty Name="Preferido" ColumnName="Preferido" />
+                <ScalarProperty Name="Pais" ColumnName="Pais" />
+                <ScalarProperty Name="Codigo" ColumnName="Codigo" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ACTIVIDADES">
+            <EntityTypeMapping TypeName="BASHorasModel.ACTIVIDADES">
+              <MappingFragment StoreEntitySet="ACTIVIDADES">
+                <ScalarProperty Name="Habilitada" ColumnName="Habilitada" />
+                <ScalarProperty Name="Actividad" ColumnName="Actividad" />
+                <ScalarProperty Name="Codigo" ColumnName="Codigo" />
+                <ScalarProperty Name="IDAct" ColumnName="IDAct" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="PRODUCTOS">
+            <EntityTypeMapping TypeName="BASHorasModel.PRODUCTOS">
+              <MappingFragment StoreEntitySet="PRODUCTOS">
+                <ScalarProperty Name="FProyFin" ColumnName="FProyFin" />
+                <ScalarProperty Name="FProyIni" ColumnName="FProyIni" />
+                <ScalarProperty Name="Activo" ColumnName="Activo" />
+                <ScalarProperty Name="Producto" ColumnName="Producto" />
+                <ScalarProperty Name="Codigo" ColumnName="Codigo" />
+                <ScalarProperty Name="IDPro" ColumnName="IDPro" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="REGISTROS">
+            <EntityTypeMapping TypeName="BASHorasModel.REGISTROS">
+              <MappingFragment StoreEntitySet="REGISTROS">
+                <ScalarProperty Name="ModtempDVY570" ColumnName="ModtempDVY570" />
+                <ScalarProperty Name="Observaciones" ColumnName="Observaciones" />
+                <ScalarProperty Name="CodPais" ColumnName="CodPais" />
+                <ScalarProperty Name="Minutos" ColumnName="Minutos" />
+                <ScalarProperty Name="Horas" ColumnName="Horas" />
+                <ScalarProperty Name="Fecha" ColumnName="Fecha" />
+                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
+                <ScalarProperty Name="idActividad" ColumnName="idActividad" />
+                <ScalarProperty Name="idProducto" ColumnName="idProducto" />
+                <ScalarProperty Name="IDReg" ColumnName="IDReg" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="vRegistros">
+            <EntityTypeMapping TypeName="BASHorasModel.vRegistros">
+              <MappingFragment StoreEntitySet="vRegistros">
+                <ScalarProperty Name="Producto" ColumnName="Producto" />
+                <ScalarProperty Name="CodProducto" ColumnName="CodProducto" />
+                <ScalarProperty Name="Pais" ColumnName="Pais" />
+                <ScalarProperty Name="Actividad" ColumnName="Actividad" />
+                <ScalarProperty Name="Codigo" ColumnName="Codigo" />
+                <ScalarProperty Name="Observaciones" ColumnName="Observaciones" />
+                <ScalarProperty Name="CodPais" ColumnName="CodPais" />
+                <ScalarProperty Name="Minutos" ColumnName="Minutos" />
+                <ScalarProperty Name="Horas" ColumnName="Horas" />
+                <ScalarProperty Name="Fecha" ColumnName="Fecha" />
+                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
+                <ScalarProperty Name="idActividad" ColumnName="idActividad" />
+                <ScalarProperty Name="idProducto" ColumnName="idProducto" />
+                <ScalarProperty Name="IDReg" ColumnName="IDReg" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="CONFIGURACIONES">
+            <EntityTypeMapping TypeName="BASHorasModel.CONFIGURACIONES">
+              <MappingFragment StoreEntitySet="CONFIGURACIONES">
+                <ScalarProperty Name="Descripcion" ColumnName="Descripcion" />
+                <ScalarProperty Name="Valor" ColumnName="Valor" />
+                <ScalarProperty Name="CodConfig" ColumnName="CodConfig" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="spFechasUltimasTareas" FunctionName="BASHorasModel.Store.spFechasUltimasTareas" />
+          <EntitySetMapping Name="CENTROS">
+            <EntityTypeMapping TypeName="BASHorasModel.CENTROS">
+              <MappingFragment StoreEntitySet="CENTROS">
+                <ScalarProperty Name="Nombre" ColumnName="Nombre" />
+                <ScalarProperty Name="CodCen" ColumnName="CodCen" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="REPORTES">
+            <EntityTypeMapping TypeName="BASHorasModel.REPORTES">
+              <MappingFragment StoreEntitySet="REPORTES">
+                <ScalarProperty Name="DeCentro" ColumnName="DeCentro" />
+                <ScalarProperty Name="DeUsuario" ColumnName="DeUsuario" />
+                <ScalarProperty Name="CodPais" ColumnName="CodPais" />
+                <ScalarProperty Name="Producto_id" ColumnName="Producto_id" />
+                <ScalarProperty Name="Actividad_id" ColumnName="Actividad_id" />
+                <ScalarProperty Name="Hasta" ColumnName="Hasta" />
+                <ScalarProperty Name="Desde" ColumnName="Desde" />
+                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
+                <ScalarProperty Name="Titulo" ColumnName="Titulo" />
+                <ScalarProperty Name="IDRep" ColumnName="IDRep" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="spAnalisisActividades" FunctionName="BASHorasModel.Store.spAnalisisActividades">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="BASHorasModel.spAnalisisActividades_Result">
+                <ScalarProperty Name="ID" ColumnName="ID" />
+                <ScalarProperty Name="Concepto" ColumnName="Concepto" />
+                <ScalarProperty Name="CodActiv" ColumnName="CodActiv" />
+                <ScalarProperty Name="Recuento" ColumnName="Recuento" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <EntitySetMapping Name="FERIADOS">
+            <EntityTypeMapping TypeName="BASHorasModel.FERIADOS">
+              <MappingFragment StoreEntitySet="FERIADOS">
+                <ScalarProperty Name="Motivo" ColumnName="Motivo" />
+                <ScalarProperty Name="Feriado" ColumnName="Feriado" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="REMUNERACIONES">
+            <EntityTypeMapping TypeName="BASHorasModel.REMUNERACIONES">
+              <MappingFragment StoreEntitySet="REMUNERACIONES">
+                <ScalarProperty Name="Legajo" ColumnName="Legajo" />
+                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
+                <ScalarProperty Name="Remuneracion" ColumnName="Remuneracion" />
+                <ScalarProperty Name="Anio" ColumnName="Anio" />
+                <ScalarProperty Name="Mes" ColumnName="Mes" />
+                <ScalarProperty Name="IDRem" ColumnName="IDRem" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="DIAS_HABILES">
+            <EntityTypeMapping TypeName="BASHorasModel.DIAS_HABILES">
+              <MappingFragment StoreEntitySet="DIAS_HABILES">
+                <ScalarProperty Name="CantDias" ColumnName="CantDias" />
+                <ScalarProperty Name="Mes" ColumnName="Mes" />
+                <ScalarProperty Name="Anio" ColumnName="Anio" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="spReporteGeneral" FunctionName="BASHorasModel.Store.spReporteGeneral">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="BASHorasModel.spReporteGeneral_Result">
+                <ScalarProperty Name="IDReg" ColumnName="IDReg" />
+                <ScalarProperty Name="FECHA_ACTIVIDAD" ColumnName="FECHA ACTIVIDAD" />
+                <ScalarProperty Name="USUARIO" ColumnName="USUARIO" />
+                <ScalarProperty Name="COD_ACTIVIDAD" ColumnName="COD_ACTIVIDAD" />
+                <ScalarProperty Name="ACTIVIDAD" ColumnName="ACTIVIDAD" />
+                <ScalarProperty Name="PAIS" ColumnName="PAIS" />
+                <ScalarProperty Name="ID_PRODUCTO" ColumnName="ID_PRODUCTO" />
+                <ScalarProperty Name="PRODUCTO" ColumnName="PRODUCTO" />
+                <ScalarProperty Name="HORAS" ColumnName="HORAS" />
+                <ScalarProperty Name="MINUTOS" ColumnName="MINUTOS" />
+                <ScalarProperty Name="OBSERVACIONES" ColumnName="OBSERVACIONES" />
+                <ScalarProperty Name="LEGAJO" ColumnName="LEGAJO" />
+                <ScalarProperty Name="JORNADA" ColumnName="JORNADA" />
+                <ScalarProperty Name="CENTRO" ColumnName="CENTRO" />
+                <ScalarProperty Name="REMUNERACION" ColumnName="REMUNERACION" />
+                <ScalarProperty Name="CUIL" ColumnName="CUIL" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="false" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="False" />
+        <DesignerProperty Name="UseLegacyProvider" Value="false" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>

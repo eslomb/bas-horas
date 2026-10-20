@@ -1,0 +1,59 @@
+﻿<%@ Master Language="VB" CodeFile="Anonimos.master.vb" Inherits="masters_Anonimos" %>
+<!DOCTYPE html>
+<html lang="es">
+  <head runat="server" id="head">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>BAS Horas</title>
+    <!-- los recursos se agregan por programacion -->      
+  </head>
+
+  <body>
+      
+    <form id="form1" runat="server" class="form-signin">
+    
+    <div class="container">
+        <div id="logo" class="text-center">
+            <asp:Image ID="img_logo" runat="server" ImageUrl="~/app/img/logoBAS.jpg" AlternateText="logo" /></div>
+
+        <asp:ContentPlaceHolder id="cph_contenido" runat="server">
+        </asp:ContentPlaceHolder>
+    </div> <!-- /container -->
+
+     <!-- Validation Summary Modal -->
+    <div class="modal fade" id="validation_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+          <div class="modal-content-wrap">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                      <h4 class="modal-title">Revisar datos ingresados</h4>
+                  </div>
+                  <div class="modal-body">
+
+                    <asp:ValidationSummary ID="ValidationSummary2" runat="server" ForeColor="Black" />
+
+                  </div>
+                  <div class="modal-footer">
+                      <button data-dismiss="modal" class="btn btn-default" type="button">Aceptar</button>
+                  </div>
+              </div>
+
+          </div>
+      </div>
+    </div>
+    <!-- /.modal -->
+    </form>
+    <script>
+        function WebForm_OnSubmit() { // sobreescribe la funcion para usar el mensaje de validation en un modal
+            if (typeof (ValidatorOnSubmit) == "function" && ValidatorOnSubmit() == false) {
+                $("#validation_modal").modal();
+                return false;
+            }
+            return true;
+        }
+    </script>
+
+  </body>
+</html>

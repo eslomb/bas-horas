@@ -28,6 +28,7 @@ Public Module DependencyConfig
         builder.RegisterType(Of NotificadorUsuarios)().As(Of INotificadorUsuarios)().InstancePerRequest()
 
         builder.RegisterType(Of ConsultasService)().As(Of IConsultasService)().InstancePerRequest()
+        builder.RegisterType(Of PaisService)().As(Of IPaisService)().InstancePerRequest()
         builder.RegisterType(Of RegistroService)().As(Of IRegistroService)().InstancePerRequest()
         builder.RegisterType(Of ReporteGeneralService)().As(Of IReporteGeneralService)().InstancePerRequest()
         builder.RegisterType(Of ReporteExportacionService)().As(Of IReporteExportacionService)().InstancePerRequest()

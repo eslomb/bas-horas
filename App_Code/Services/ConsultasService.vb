@@ -9,16 +9,13 @@ Namespace Services
 
         Private ReadOnly productoRepo As IProductoRepository
         Private ReadOnly actividadRepo As IActividadRepository
-        Private ReadOnly paisRepo As IPaisRepository
         Private ReadOnly centroRepo As ICentroRepository
 
         Public Sub New(productoRepo As IProductoRepository,
                         actividadRepo As IActividadRepository,
-                        paisRepo As IPaisRepository,
                         centroRepo As ICentroRepository)
             Me.productoRepo = productoRepo
             Me.actividadRepo = actividadRepo
-            Me.paisRepo = paisRepo
             Me.centroRepo = centroRepo
         End Sub
 
@@ -46,15 +43,6 @@ Namespace Services
                         .Actividad = a.Actividad,
                         .Habilitada = a.Habilitada
                     }).OrderBy(Function(a) a.Actividad).ToList()
-        End Function
-
-        Public Function ListarPaises() As List(Of PaisDTO) Implements IConsultasService.ListarPaises
-            Return (From p In paisRepo.ObtenerTodos()
-                    Select New PaisDTO With {
-                        .Codigo = p.Codigo,
-                        .Pais = p.Pais,
-                        .Preferido = p.Preferido
-                    }).OrderByDescending(Function(p) p.Preferido).ThenBy(Function(p) p.Pais).ToList()
         End Function
 
         Public Function ListarCentros() As List(Of CentroDTO) Implements IConsultasService.ListarCentros

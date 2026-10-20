@@ -23,12 +23,6 @@ Public Class ConsultasController
     End Function
 
     <HttpGet>
-    <Route("api/consultas/paises")>
-    Public Function ListarPaises() As IHttpActionResult
-        Return Ok(servicio.ListarPaises())
-    End Function
-
-    <HttpGet>
     <Route("api/consultas/centros")>
     Public Function ListarCentros() As IHttpActionResult
         Return Ok(servicio.ListarCentros())

@@ -1,4 +1,4 @@
-Namespace DTOs.Consultas
+Namespace DTOs.Paises
     Public Class PaisDTO
         Public Property Codigo As String
         Public Property Pais As String

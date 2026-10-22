@@ -1,4 +1,4 @@
-Namespace DTOs.Consultas
+Namespace DTOs.Actividades
     Public Class ActividadDTO
         Public Property IDAct As Integer
         Public Property Codigo As String

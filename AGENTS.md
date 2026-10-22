@@ -52,7 +52,7 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 
 - Cualquier campo "dueño" de un registro (ej. `Usuario`) **siempre sale del claim del JWT** vía `ObtenerUsuarioActual()`, nunca del body que manda el cliente — evita que alguien cargue datos a nombre de otro usuario.
 - Mutaciones (`PUT`/`DELETE`) y lecturas por ID (`GET /{id}`) verifican ownership por igual y devuelven `403 Forbidden` si el que llama no es el dueño (antes las lecturas por ID no lo chequeaban — era un IDOR real, cualquier usuario autenticado podía leer registros/reportes de otro cambiando el id; corregido en `RegistroService.ObtenerPorId` y `ReporteGuardadoService.ObtenerPorId`). Si se agrega un nuevo endpoint `GET /{id}` sobre datos de un usuario, aplicar el mismo chequeo por default, no asumir que un simple "no encontrado" alcanza.
-- `<JwtAuthorize>` (atributo propio en `App_Code/API/auth/JwtAuthorizeAttribute.vb`, namespace `Auth`) se aplica a nivel de clase en los controllers con datos sensibles (Registros, Reportes, Usuarios). **Consultas** (catálogos de solo lectura) se dejó deliberadamente sin auth por decisión explícita del usuario — no asumir que todo debe protegerse, pero si se agrega un endpoint con datos sensibles, proteger por default y preguntar si hay dudas.
+- `<JwtAuthorize>` (atributo propio en `App_Code/API/auth/JwtAuthorizeAttribute.vb`, namespace `Auth`) se aplica a nivel de clase en los controllers con datos sensibles (Registros, Reportes, Usuarios). Los catálogos (Países, Productos, Actividades, Centros) también exigen JWT: antes vivían en un `ConsultasController` público, que se eliminó al migrar cada catálogo a su propio controller con CRUD de Administrador. Si se agrega un endpoint con datos sensibles, proteger por default y preguntar si hay dudas.
 - **Restricción por rol**: `JwtAuthorizeAttribute` hereda de `AuthorizeAttribute` y llama a `MyBase.OnAuthorization` después de fijar el `ClaimsPrincipal`, así que su propiedad `Roles` (heredada) funciona tal cual — alcanza con `<JwtAuthorize(Roles:="Administrador")>` a nivel de acción para restringir un endpoint puntual a un rol (ver `UsuariosController.Listar`/`ObtenerPorUserName`/`ActualizarUsuario`). No hace falta chequeo manual de `User.IsInRole(...)` en el controller. Los nombres de rol ("Administrador", "Avanzado", "Basico", extensible a futuro) están centralizados en `Aplicacion.Grupos` (`Aplicacion.vb`) — son solo constantes de string sin lógica ni acceso a datos, así que referenciarlas desde la API no rompe el desacople con `app/`; reusarlas en vez de hardcodear los strings de nuevo.
 - Los matices más finos de permisos por rol que tiene `app/` (ej. qué campos puede setear cada rol al cargar un reporte) no se replicaron — si se pide algo así, es una decisión de diseño a confirmar con el usuario, no asumir.
 
@@ -72,14 +72,26 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 | POST | `/api/auth/login` | — | Login contra Membership, devuelve JWT |
 | POST | `/api/auth/refresh` | JWT | Renueva el token |
 | GET | `/api/test` | — | Endpoint de ejemplo/smoke test |
-| GET | `/api/consultas/productos?soloActivos=` | — | Catálogo de productos |
-| GET | `/api/consultas/actividades?soloHabilitadas=` | — | Catálogo de actividades |
-| GET | `/api/consultas/centros` | — | Catálogo de centros |
+| GET | `/api/centros` | JWT | Lista centros por nombre. Reemplaza al viejo `/api/consultas/centros`, que era público y se eliminó |
+| GET | `/api/centros/{codigo}` | JWT | Detalle de un centro (404 si no existe) |
+| POST | `/api/centros` | JWT + rol `Administrador` | Alta (`CodCen` ≤ 50 chars, `Nombre` ≤ 50; 400 si inválido, 409 si el código ya existe) |
+| PUT | `/api/centros/{codigo}` | JWT + rol `Administrador` | Edita `Nombre` (el código es la clave y no se modifica) |
+| DELETE | `/api/centros/{codigo}` | JWT + rol `Administrador` | Baja (409 si algún usuario tiene ese centro en su Profile) |
 | GET | `/api/paises` | JWT | Lista países (preferidos primero, luego por nombre). Reemplaza al viejo `/api/consultas/paises`, que era público y se eliminó |
 | GET | `/api/paises/{codigo}` | JWT | Detalle de un país (404 si no existe) |
 | POST | `/api/paises` | JWT + rol `Administrador` | Alta (`Codigo` ≤ 4 chars, `Pais` ≤ 100; 400 si inválido, 409 si el código ya existe) |
 | PUT | `/api/paises/{codigo}` | JWT + rol `Administrador` | Edita `Pais`/`Preferido` (el código es la clave y no se modifica). Hay un único país preferido: marcar uno (en alta o edición) desmarca el anterior en la misma transacción |
 | DELETE | `/api/paises/{codigo}` | JWT + rol `Administrador` | Baja (409 si es el país preferido o si hay registros de horas con ese país) |
+| GET | `/api/productos?soloActivos=` | JWT | Lista productos (default `soloActivos=true`). Reemplaza al viejo `/api/consultas/productos`, que era público y se eliminó |
+| GET | `/api/productos/{id:int}` | JWT | Detalle de un producto (404 si no existe) |
+| POST | `/api/productos` | JWT + rol `Administrador` | Alta (`Codigo` ≤ 10 chars, `Producto` ≤ 400, `Activo` default true; 400 si inválido o `FProyIni` > `FProyFin`). No hay 409 por código duplicado: la base ya tiene códigos repetidos |
+| PUT | `/api/productos/{id:int}` | JWT + rol `Administrador` | Edición completa (Codigo, Producto, Activo, FProyIni, FProyFin) |
+| DELETE | `/api/productos/{id:int}` | JWT + rol `Administrador` | Baja (409 si hay registros de horas o filas de `PROYECTOS` que lo referencian; en ese caso usar `Activo=false`) |
+| GET | `/api/actividades?soloHabilitadas=` | JWT | Lista actividades (default `soloHabilitadas=true`). Reemplaza al viejo `/api/consultas/actividades`, que era público y se eliminó |
+| GET | `/api/actividades/{id:int}` | JWT | Detalle de una actividad (404 si no existe) |
+| POST | `/api/actividades` | JWT + rol `Administrador` | Alta (`Codigo` ≤ 10 chars, `Actividad` ≤ 400, `Habilitada` default true; 400 si inválido, 409 si el código ya existe) |
+| PUT | `/api/actividades/{id:int}` | JWT + rol `Administrador` | Edición completa (409 si el código choca con otra actividad) |
+| DELETE | `/api/actividades/{id:int}` | JWT + rol `Administrador` | Baja (409 si hay registros de horas o filas de `TAREASDEV` que la referencian; en ese caso usar `Habilitada=false`) |
 | GET | `/api/registros?desde=&hasta=` | JWT | Lista registros de horas del usuario logueado en el rango (default: hoy-hoy si no se manda ninguno; 400 si desde > hasta) |
 | GET | `/api/registros/{id}` | JWT | Detalle de un registro (403 si no es el dueño) |
 | POST | `/api/registros` | JWT | Alta (Usuario = token; 409 si hay duplicado) |

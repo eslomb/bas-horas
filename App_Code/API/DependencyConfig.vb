@@ -12,7 +12,7 @@ Public Module DependencyConfig
     Public Sub Register(config As HttpConfiguration)
         Dim builder As New ContainerBuilder()
 
-        builder.RegisterApiControllers(GetType(ConsultasController).Assembly)
+        builder.RegisterApiControllers(GetType(ControladorApiBase).Assembly)
 
         builder.RegisterType(Of BASHorasEntities)().InstancePerRequest()
 
@@ -27,7 +27,9 @@ Public Module DependencyConfig
         builder.RegisterType(Of UsuarioRepository)().As(Of IUsuarioRepository)().InstancePerRequest()
         builder.RegisterType(Of NotificadorUsuarios)().As(Of INotificadorUsuarios)().InstancePerRequest()
 
-        builder.RegisterType(Of ConsultasService)().As(Of IConsultasService)().InstancePerRequest()
+        builder.RegisterType(Of CentroService)().As(Of ICentroService)().InstancePerRequest()
+        builder.RegisterType(Of ProductoService)().As(Of IProductoService)().InstancePerRequest()
+        builder.RegisterType(Of ActividadService)().As(Of IActividadService)().InstancePerRequest()
         builder.RegisterType(Of PaisService)().As(Of IPaisService)().InstancePerRequest()
         builder.RegisterType(Of RegistroService)().As(Of IRegistroService)().InstancePerRequest()
         builder.RegisterType(Of ReporteGeneralService)().As(Of IReporteGeneralService)().InstancePerRequest()

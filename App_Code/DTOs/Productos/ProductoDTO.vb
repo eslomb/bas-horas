@@ -1,4 +1,4 @@
-Namespace DTOs.Consultas
+Namespace DTOs.Productos
     Public Class ProductoDTO
         Public Property IDPro As Integer
         Public Property Codigo As String

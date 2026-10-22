@@ -1,0 +1,1 @@
+import{b as e,mt as t,xt as n}from"./761svqTg.js";import{t as r}from"#entry";var i={},a={class:`min-h-screen flex items-center justify-center bg-elevated/25 p-4`};function o(r,i){return t(),e(`div`,a,[n(r.$slots,`default`)])}var s=r(i,[[`render`,o]]);export{s as default};

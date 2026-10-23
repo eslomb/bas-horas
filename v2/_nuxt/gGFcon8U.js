@@ -1,0 +1,1 @@
+var e={Basico:`Basico`,Avanzado:`Avanzado`,Administrador:`Administrador`},t=(e,t)=>!e?.length||e.some(e=>t.includes(e));export{t as n,e as t};

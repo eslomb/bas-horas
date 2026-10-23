@@ -1,4 +1,4 @@
-Namespace DTOs.Productos
+﻿Namespace DTOs.Productos
     ' El IDPro es identity: en el alta lo genera la base y en la edición sale de la ruta.
     Public Class ProductoInputDTO
         Public Property Codigo As String

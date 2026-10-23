@@ -77,6 +77,19 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 | POST | `/api/centros` | JWT + rol `Administrador` | Alta (`CodCen` ≤ 50 chars, `Nombre` ≤ 50; 400 si inválido, 409 si el código ya existe) |
 | PUT | `/api/centros/{codigo}` | JWT + rol `Administrador` | Edita `Nombre` (el código es la clave y no se modifica) |
 | DELETE | `/api/centros/{codigo}` | JWT + rol `Administrador` | Baja (409 si algún usuario tiene ese centro en su Profile) |
+| GET | `/api/configuraciones` | JWT | Lista las filas de `CONFIGURACIONES` (`CodConfig`, `Valor`, `Descripcion`); cualquier usuario autenticado, el frontend lee los valores (ej. `PERMITIR_CARGAS`) |
+| GET | `/api/configuraciones/{codigo}` | JWT | Detalle de una configuración (404 si no existe) |
+| PUT | `/api/configuraciones/{codigo}` | JWT + rol `Administrador` | Edita **solo** `Valor` (≤ 50 chars, no nulo; 400 si inválido). `CodConfig` y `Descripcion` no se modifican. No hay alta ni baja |
+| GET | `/api/feriados?anio=` | JWT | Lista feriados por fecha; `anio` opcional filtra por año |
+| GET | `/api/feriados/{fecha}` | JWT | Detalle de un feriado; la fecha va como `yyyy-MM-dd` (400 si el formato es inválido, 404 si no existe) |
+| POST | `/api/feriados` | JWT + rol `Administrador` | Alta (`Feriado` fecha obligatoria, `Motivo` opcional ≤ 50; 400 si inválido, 409 si ya hay un feriado ese día) |
+| PUT | `/api/feriados/{fecha}` | JWT + rol `Administrador` | Edita `Motivo` (la fecha es la clave y no se modifica) |
+| DELETE | `/api/feriados/{fecha}` | JWT + rol `Administrador` | Baja (sin dependencias: la tabla no tiene FKs) |
+| GET | `/api/dias-habiles?anio=` | JWT | Lista cantidad de días hábiles por año/mes (`DIAS_HABILES`); `anio` opcional filtra |
+| GET | `/api/dias-habiles/{id:int}` | JWT | Detalle (404 si no existe) |
+| POST | `/api/dias-habiles` | JWT + rol `Administrador` | Alta (`Anio` 2000-2100, `Mes` 1-12, `CantDias` entre 0 y los días del mes; 400 si inválido, 409 si ya existe ese año/mes — hay UNIQUE en la base) |
+| PUT | `/api/dias-habiles/{id:int}` | JWT + rol `Administrador` | Edición completa (409 si año/mes choca con otro registro) |
+| DELETE | `/api/dias-habiles/{id:int}` | JWT + rol `Administrador` | Baja (sin FKs). Ojo: el export de reportes usa esta tabla para Dias.habil/Costo |
 | GET | `/api/paises` | JWT | Lista países (preferidos primero, luego por nombre). Reemplaza al viejo `/api/consultas/paises`, que era público y se eliminó |
 | GET | `/api/paises/{codigo}` | JWT | Detalle de un país (404 si no existe) |
 | POST | `/api/paises` | JWT + rol `Administrador` | Alta (`Codigo` ≤ 4 chars, `Pais` ≤ 100; 400 si inválido, 409 si el código ya existe) |
@@ -112,10 +125,11 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 | POST | `/api/usuarios/me/password` | JWT | Cambia la propia contraseña (requiere la actual) |
 | GET | `/api/usuarios` | JWT + rol `Administrador` | Lista todos los usuarios |
 | GET | `/api/usuarios/{userName}` | JWT + rol `Administrador` | Datos de cualquier usuario |
-| PUT | `/api/usuarios/{userName}` | JWT + rol `Administrador` | Edita cualquier usuario, incluye campos administrativos (Legajo/Centro/CUIL/Dependencia/Modalidad/PeriodoAbierto) |
+| POST | `/api/usuarios` | JWT + rol `Administrador` | Alta de usuario. Body `CrearUsuarioInputDTO` (hereda los campos del PUT) + `UserName` (obligatorio, sin espacios al inicio/final) y `Password` (obligatoria). `Rol` y `Habilitado` obligatorios, mismas validaciones que el PUT. 201 con el `UsuarioDTO`; 400 si hay datos mal formados o `MembershipCreateStatus` = `InvalidPassword`/`InvalidUserName`/`InvalidEmail`; 409 si `DuplicateUserName`/`DuplicateEmail` (o si el usuario ya existe); 500 con mensaje si falla un paso. Orden: validar sin escribir → `Membership.CreateUser` → `UpdateUser` (comentario + `IsApproved`) → Profile → `AsignarRolUnico`. Si falla Update/Profile/rol se intenta borrar el usuario recién creado (`DeleteUser` con datos relacionados); si el borrado también falla, 500 avisando que quedó creado a medias |
+| PUT | `/api/usuarios/{userName}` | JWT + rol `Administrador` | Edita cualquier usuario, incluye campos administrativos (Legajo/Centro/CUIL/Dependencia/Modalidad/PeriodoAbierto) y además `Password` (opcional: vacía/`null` no la toca; si viene se fija con `ForzarNuevaPassword`, tras `UpdateUser` y antes de Profile/rol; si la cuenta está bloqueada se la **desbloquea** primero porque `ResetPassword` falla en cuentas bloqueadas; la política de contraseña se valida antes de escribir nada y devuelve 400), `Rol` (obligatorio: `Basico`/`Avanzado`/`Administrador`, el usuario queda **solo** en ese rol) y `Habilitado` (obligatorio, se guarda en `IsApproved`). 400 si el rol es inválido o falta `Habilitado`; 409 si un administrador intenta quitarse su propio rol/deshabilitarse, o si el cambio dejaría al sistema sin ningún administrador habilitado (aprobado y no bloqueado); 500 con mensaje si falla un paso intermedio. Orden de escrituras (Membership/Profile/Roles no comparten transacción): `UpdateUser` (puede fallar por email duplicado) → Profile → rol (se agrega el nuevo antes de sacar los viejos) |
 | POST | `/api/auth/recuperar-password` | — | Genera una password nueva (`Utils.GeneradorPassword`) y la manda por mail al usuario encontrado por email |
 
-**Pendiente / fuera de alcance por ahora (no asumir que existe):** reseteo de contraseña ajena por un Admin (endpoint dedicado — hoy solo existe el self-service "olvidé mi contraseña" de `/api/auth/recuperar-password`), y gestión de asignación de roles (alta/baja de rol a un usuario) — no se confirmaron ni se construyeron, solo la lectura de roles vía `UsuarioDTO.Roles`.
+**Pendiente / fuera de alcance por ahora (no asumir que existe):** baja (borrado) de usuarios, y un endpoint dedicado de reseteo de contraseña ajena (hoy un Admin puede fijarla con el campo `Password` de `PUT /api/usuarios/{userName}`, además del self-service "olvidé mi contraseña" de `/api/auth/recuperar-password`). El alta de usuarios (`POST /api/usuarios`) y el cambio de rol (campo `Rol` del PUT) ya existen.
 
 ## 5. Documentación / Swagger
 

@@ -2,6 +2,8 @@ Namespace DTOs.Usuarios
     Public Enum ResultadoOperacionUsuario
         Ok
         NoEncontrado
+        Invalido
+        Conflicto
         Fallo
     End Enum
 

@@ -1,4 +1,4 @@
-Namespace DTOs.Actividades
+﻿Namespace DTOs.Actividades
     ' El IDAct es identity: en el alta lo genera la base y en la edición sale de la ruta.
     Public Class ActividadInputDTO
         Public Property Codigo As String

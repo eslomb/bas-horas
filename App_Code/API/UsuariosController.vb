@@ -1,4 +1,4 @@
-Imports System.Web.Http
+﻿Imports System.Web.Http
 Imports System.Net
 Imports Auth
 Imports DTOs.Usuarios
@@ -85,17 +85,44 @@ Public Class UsuariosController
         Return Ok(datos)
     End Function
 
+    <HttpPost>
+    <JwtAuthorize(Roles:="Administrador")>
+    <Route("api/usuarios")>
+    Public Function Crear(<FromBody> input As CrearUsuarioInputDTO) As IHttpActionResult
+        If input Is Nothing Then Return BadRequest("Debe enviar los datos del usuario.")
+
+        Dim resultado = servicio.CrearUsuario(input)
+
+        Select Case resultado.Estado
+            Case ResultadoOperacionUsuario.Invalido
+                Return BadRequest(resultado.Mensaje)
+            Case ResultadoOperacionUsuario.Conflicto
+                Return Content(HttpStatusCode.Conflict, resultado.Mensaje)
+            Case ResultadoOperacionUsuario.Fallo
+                Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
+            Case Else
+                Return Content(HttpStatusCode.Created, resultado.Usuario)
+        End Select
+    End Function
+
     <HttpPut>
     <JwtAuthorize(Roles:="Administrador")>
     <Route("api/usuarios/{userName}")>
     Public Function ActualizarUsuario(userName As String, <FromBody> input As ActualizarUsuarioInputDTO) As IHttpActionResult
         If input Is Nothing Then Return BadRequest("Debe enviar los datos a actualizar.")
 
-        Dim resultado = servicio.ActualizarUsuario(userName, input)
+        Dim actual = ObtenerUsuarioActual()
+        If String.IsNullOrEmpty(actual) Then Return Unauthorized()
+
+        Dim resultado = servicio.ActualizarUsuario(userName, input, actual)
 
         Select Case resultado.Estado
             Case ResultadoOperacionUsuario.NoEncontrado
                 Return NotFound()
+            Case ResultadoOperacionUsuario.Invalido
+                Return BadRequest(resultado.Mensaje)
+            Case ResultadoOperacionUsuario.Conflicto
+                Return Content(HttpStatusCode.Conflict, resultado.Mensaje)
             Case ResultadoOperacionUsuario.Fallo
                 Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
             Case Else

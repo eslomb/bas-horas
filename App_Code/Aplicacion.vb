@@ -900,7 +900,8 @@ Namespace Aplicacion
 
         Public Sub cerrarSesion()
             FormsAuthentication.SignOut()
-            Response.Redirect("~/")
+            Session.Abandon()
+            HttpContext.Current.Response.Redirect("~/")
         End Sub
 
     End Class

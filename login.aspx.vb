@@ -16,6 +16,14 @@ Partial Class login
     End Sub
 
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+
+        If Request.QueryString("logout") = "1" Then
+            'FormsAuthentication.SignOut()   ' o tu método de PaginaApp
+            ' Session.Abandon()
+            Dim pagina As PaginaAdmin = new PaginaAdmin()
+            pagina.cerrarSesion()
+        End If
+        
         tb_usr = Login2.FindControl("UserName")
         tb_pwd = Login2.FindControl("Password")
         cb_Remember = Login2.FindControl("RememberMe")

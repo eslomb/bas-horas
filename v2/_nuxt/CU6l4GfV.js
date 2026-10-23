@@ -1,1 +1,0 @@
-import{d as e,p as t}from"./1rF91Dlv.js";import{t as n}from"./B8_FaZYw.js";var r=e(()=>{if(n().isAuthenticated)return t(`/dashboard`)});export{r as default};

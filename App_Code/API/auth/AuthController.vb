@@ -45,6 +45,28 @@ Namespace Auth
         End Function
 
         <HttpPost>
+        <Route("api/auth/sso")>
+        Public Function Sso() As IHttpActionResult
+            ' sirve para autenticar desde Nuxt con JWT, cuando se loguea con ASP, y luego quiere acceder a Nuxt
+            ' identidad que dejó FormsAuthenticationModule a partir de .ASPXAUTH
+            Dim identidad = HttpContext.Current.User.Identity
+            If identidad Is Nothing OrElse Not identidad.IsAuthenticated Then
+                Return Unauthorized()
+            End If
+
+            Dim userName As String = identidad.Name
+            Dim usuario = Membership.GetUser(userName)
+            If usuario Is Nothing OrElse usuario.IsLockedOut OrElse Not usuario.IsApproved Then
+                Return Unauthorized()
+            End If
+
+            Return Ok(New With {
+                .token = GenerarTokenJWT(userName),
+                .username = userName
+            })
+        End Function
+
+        <HttpPost>
         <JwtAuthorize>
         <Route("api/auth/refresh")>
         Public Function RefreshToken() As IHttpActionResult

@@ -614,7 +614,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
             <ResultMapping>
               <ComplexTypeMapping TypeName="BASHorasModel.spReporteGeneral_Result">
                 <ScalarProperty Name="IDReg" ColumnName="IDReg" />
-                <ScalarProperty Name="FECHA_ACTIVIDAD" ColumnName="FECHA ACTIVIDAD" />
+                <ScalarProperty Name="FECHA_ACTIVIDAD" ColumnName="FECHA_ACTIVIDAD" />
                 <ScalarProperty Name="USUARIO" ColumnName="USUARIO" />
                 <ScalarProperty Name="COD_ACTIVIDAD" ColumnName="COD_ACTIVIDAD" />
                 <ScalarProperty Name="ACTIVIDAD" ColumnName="ACTIVIDAD" />

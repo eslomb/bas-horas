@@ -30,7 +30,7 @@
                     <a class="navbar-brand" href="#">
                         <asp:Image ID="img_logo" runat="server" ImageUrl="~/app/img/logoBAS.jpg" AlternateText="logo" /> 
                     </a>
-                    <small id="version">v. 1.6.0</small>
+                    <small id="version">v. 1.7.0</small>
                 </div>
 
                 <div id="navbar" class="navbar-collapse collapse">

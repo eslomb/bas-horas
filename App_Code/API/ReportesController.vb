@@ -10,33 +10,13 @@ Imports Services.Interfaces
 Public Class ReportesController
     Inherits ControladorApiBase
 
-    Private Const TamanioPaginaMaximo As Integer = 200
-    Private Const MensajePaginadoInvalido As String = "pagina debe ser >= 1 y tamanio debe estar entre 1 y 200."
-
-    Private ReadOnly servicio As IReporteGeneralService
     Private ReadOnly servicioGuardados As IReporteGuardadoService
+    Private ReadOnly servicioRegistros As IReporteRegistrosService
 
-    Public Sub New(servicio As IReporteGeneralService, servicioGuardados As IReporteGuardadoService)
-        Me.servicio = servicio
+    Public Sub New(servicioGuardados As IReporteGuardadoService, servicioRegistros As IReporteRegistrosService)
         Me.servicioGuardados = servicioGuardados
+        Me.servicioRegistros = servicioRegistros
     End Sub
-
-    <HttpPost>
-    <Route("api/reportes/general")>
-    Public Function GenerarReporteGeneral(<FromBody> filtros As FiltroReporte) As IHttpActionResult
-        If filtros Is Nothing Then Return BadRequest("Debe enviar los filtros del reporte.")
-
-        Return Ok(servicio.GenerarReporteGeneral(filtros))
-    End Function
-
-    <HttpPost>
-    <Route("api/reportes/general/paginado")>
-    Public Function GenerarReporteGeneralPaginado(<FromBody> filtros As FiltroReporte, Optional pagina As Integer = 1, Optional tamanio As Integer = 50) As IHttpActionResult
-        If filtros Is Nothing Then Return BadRequest("Debe enviar los filtros del reporte.")
-        If Not ParametrosPaginadoValidos(pagina, tamanio) Then Return BadRequest(MensajePaginadoInvalido)
-
-        Return Ok(servicio.GenerarReporteGeneralPaginado(filtros, pagina, tamanio))
-    End Function
 
     <HttpGet>
     <Route("api/reportes")>
@@ -65,80 +45,56 @@ Public Class ReportesController
         End Select
     End Function
 
+    ' Registros del reporte. Qué registros y qué campos se devuelven depende del rol/usuario (ver ReporteRegistrosService).
     <HttpGet>
-    <Route("api/reportes/{id:guid}/resultado")>
-    Public Function EjecutarPorId(id As Guid) As IHttpActionResult
+    <Route("api/reportes/{id:guid}/registros")>
+    Public Function ObtenerRegistros(id As Guid) As IHttpActionResult
         Dim usuario = ObtenerUsuarioActual()
         If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
 
-        Dim resultado = servicioGuardados.EjecutarPorId(id, usuario)
+        Dim resultado = servicioRegistros.ObtenerRegistros(id, usuario)
 
         Select Case resultado.Estado
             Case ResultadoOperacionReporte.NoEncontrado
                 Return NotFound()
             Case ResultadoOperacionReporte.Prohibido
-                Return StatusCode(HttpStatusCode.Forbidden)
+                Return Prohibido(resultado.Mensaje)
             Case Else
-                Return Ok(resultado.Filas)
+                Return Ok(resultado.Registros)
         End Select
     End Function
 
-    <HttpGet>
-    <Route("api/reportes/{id:guid}/resultado/paginado")>
-    Public Function EjecutarPorIdPaginado(id As Guid, Optional pagina As Integer = 1, Optional tamanio As Integer = 50) As IHttpActionResult
-        Dim usuario = ObtenerUsuarioActual()
-        If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
-        If Not ParametrosPaginadoValidos(pagina, tamanio) Then Return BadRequest(MensajePaginadoInvalido)
-
-        Dim resultado = servicioGuardados.EjecutarPorIdPaginado(id, usuario, pagina, tamanio)
-
-        Select Case resultado.Estado
-            Case ResultadoOperacionReporte.NoEncontrado
-                Return NotFound()
-            Case ResultadoOperacionReporte.Prohibido
-                Return StatusCode(HttpStatusCode.Forbidden)
-            Case Else
-                Return Ok(resultado.FilasPaginadas)
-        End Select
-    End Function
-
+    ' Los mismos registros (y columnas) que /registros, como .xlsx.
     <HttpGet>
     <Route("api/reportes/{id:guid}/exportar")>
     Public Function Exportar(id As Guid) As IHttpActionResult
         Dim usuario = ObtenerUsuarioActual()
         If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
 
-        Dim resultado = servicioGuardados.ExportarPorId(id, usuario, User.IsInRole(Aplicacion.Grupos.Administrador))
+        Dim resultado = servicioRegistros.Exportar(id, usuario)
 
         Select Case resultado.Estado
             Case ResultadoOperacionReporte.NoEncontrado
                 Return NotFound()
             Case ResultadoOperacionReporte.Prohibido
-                Return StatusCode(HttpStatusCode.Forbidden)
+                Return Prohibido(resultado.Mensaje)
             Case ResultadoOperacionReporte.Fallo
-                Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
+                Return Content(HttpStatusCode.InternalServerError, New With {.mensaje = resultado.Mensaje})
             Case Else
                 Dim respuesta As New HttpResponseMessage(HttpStatusCode.OK) With {
                     .Content = New ByteArrayContent(resultado.Archivo)
                 }
                 respuesta.Content.Headers.ContentType = New MediaTypeHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 respuesta.Content.Headers.ContentDisposition = New ContentDispositionHeaderValue("attachment") With {
-                    .FileName = NombreArchivo(resultado.Reporte.Titulo)
+                    .FileName = resultado.NombreArchivo
                 }
                 Return ResponseMessage(respuesta)
         End Select
     End Function
 
-    Private Shared Function NombreArchivo(titulo As String) As String
-        Dim nombre = If(String.IsNullOrWhiteSpace(titulo), "Reporte", titulo.Trim())
-        For Each c In System.IO.Path.GetInvalidFileNameChars()
-            nombre = nombre.Replace(c, "_"c)
-        Next
-        Return nombre & ".xlsx"
-    End Function
-
-    Private Shared Function ParametrosPaginadoValidos(pagina As Integer, tamanio As Integer) As Boolean
-        Return pagina >= 1 AndAlso tamanio >= 1 AndAlso tamanio <= TamanioPaginaMaximo
+    Private Function Prohibido(mensaje As String) As IHttpActionResult
+        If String.IsNullOrEmpty(mensaje) Then Return StatusCode(HttpStatusCode.Forbidden)
+        Return Content(HttpStatusCode.Forbidden, New With {.mensaje = mensaje})
     End Function
 
     <HttpPost>

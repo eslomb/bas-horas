@@ -1,0 +1,1 @@
+import{C as e,T as t}from"./ClTT_5sL.js";import{t as n}from"./C46NJzbH.js";var r=e(async()=>{let e=n();if(e.isAuthenticated||await e.sso(),e.isAuthenticated)return t(`/dashboard`)});export{r as default};

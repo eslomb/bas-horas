@@ -1,0 +1,1 @@
+import{En as e,g as t}from"./DZo3dYLJ.js";import{X as n}from"./BPvil-Mu.js";function r(r){return t(()=>!e(r)||!!n(r)?.closest(`form`))}export{r as t};

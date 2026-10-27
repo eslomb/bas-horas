@@ -58,12 +58,22 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 
 ### Dominio Reportes — decisiones de diseño
 
-- **Dos servicios, a propósito**: `ReporteGeneralService` (ejecuta `spReporteGeneral`, solo lectura, sin ownership) y `ReporteGuardadoService` (CRUD con ownership sobre `REPORTES`). No se unifican: no comparten repo, DTOs ni lógica. `ReporteGuardadoService` depende de `IReporteGeneralService` y `IReporteExportacionService` para ejecutar/exportar un reporte guardado.
-- **Filtros de un reporte guardado** (`ReporteGuardadoService.ArmarFiltros`): el `Usuario` que se le pasa al SP es **siempre el usuario logueado**, no `REPORTES.DeUsuario` (que hoy queda sin efecto en `/resultado`, `/resultado/paginado` y `/exportar`). `app/` en cambio respeta `DeUsuario` para Admin/Avanzado; replicar ese matiz es una decisión de permisos pendiente de confirmar. Producto/actividad nulos se mandan como `0` (el SP lo interpreta como "todos").
-- **Campos que el SP deja en NULL** (Legajo, Jornada, Centro, CUIL) se completan en `ReporteGeneralService` desde el Profile de Membership vía `IUsuarioRepository.ObtenerPerfil`, con un cache de perfiles por usuario único (no por fila). Jornada = `Profile.Modalidad`. `ReporteFilaDTO` usa `String` para Legajo/Centro/CUIL (el CUIL no entra en un `Integer`). **Remuneracion** no sale del Profile sino de la tabla `REMUNERACIONES` y solo se usa en el export.
-- **Paginado**: el SP no se puede paginar, se ejecuta completo y se corta en el service (orden estable fecha desc, usuario, IDReg). Solo se consulta el Profile de los usuarios de la página, salvo que haya filtro por Centro (ahí hace falta el de todos). Límite `tamanio` ≤ 200 en `ReportesController`.
-- **Exportación a Excel** (`ReporteExportacionService`): usa ClosedXML (ya está en `Bin/`) con un `DataTable`. Las columnas Dias.habil / Durac.tarea / Remuneracion / Costo Tarea solo se incluyen si el usuario es `Administrador` o empieza con alguno de los prefijos hardcodeados en `UsuariosConRemuneraciones` (ROCCHI, CARRACEDO; mismo criterio que `habilitarRemuneraciones` de `app/`, reimplementado sin depender de `Aplicacion.vb`). Costo = Remuneracion / DiasHabiles / Jornada × duración (mismo cálculo que `app/reporte.aspx`); queda vacío si falta algún dato. La tabla `DIAS_HABILES` está vacía en la base de desarrollo, así que ahí Dias.habil y Costo salen vacíos.
+- **Dos servicios**: `ReporteGuardadoService` es CRUD puro sobre `REPORTES` (con ownership). `ReporteRegistrosService` ejecuta un reporte guardado (`spReporteGeneral` vía `IReporteGeneralRepository`) y devuelve/exporta sus registros. No hay endpoint de filtros libres: el viejo `POST /api/reportes/general` se eliminó porque dejaba ver registros de cualquier usuario sin control de rol.
+- **Qué registros ve cada uno** (`ReporteRegistrosService.Ejecutar`, siempre sobre un reporte propio, 403 si no):
+  - `Basico` (o sin rol): solo los propios; `REPORTES.DeUsuario` se ignora.
+  - `Avanzado`: los propios y los de todos los usuarios `Basico` (sin restricción por Centro). Si `DeUsuario` apunta a otro usuario → 403 `{mensaje}`.
+  - `Administrador`: todos, o solo `DeUsuario` si el reporte lo define.
+  - `DeCentro` del reporte filtra además por el Centro del Profile. Producto/actividad nulos se mandan como `0` (el SP lo interpreta como "todos").
+- **Qué campos ve cada uno** (`NivelDetalleReporte`, DTOs en `DTOs/Reportes/RegistroReporteDTO.vb`, cada nivel hereda del anterior):
+  - `RegistroReporteBasicoDTO`: IDReg (para editar/borrar vía `/api/registros/{id}`), Fecha, Centro, Cod/Actividad, Pais, IdProducto/Producto, Horas, Minutos, Observaciones.
+  - `RegistroReporteAvanzadoDTO` (Avanzado y Administrador): + Usuario, Legajo, CUIL, Jornada (= `Profile.Modalidad`).
+  - `RegistroReporteFullDTO` (solo usuarios cuyo nombre empieza con un prefijo de `UsuariosNivelFull`: ROCCHI, CARRACEDO, mismo criterio que `habilitarRemuneraciones` de `app/`; independiente del rol): + Dias.habil (`DIAS_HABILES`), Durac.tarea, Remuneracion (`REMUNERACIONES` por usuario/mes/año de la tarea), Costo Tarea (= Remuneracion / DiasHabiles / Jornada × duración; vacío si falta algún dato). Un Administrador que no está en esa lista **no** ve costos.
+  - El endpoint devuelve `List(Of RegistroReporteBasicoDTO)` con instancias del nivel que corresponda; Json.NET serializa el tipo real de cada elemento, así que el JSON trae los campos del nivel (Swagger solo documenta los del Basico).
+- **Profile**: Legajo/Centro/CUIL/Jornada salen del Profile vía `IUsuarioRepository.ObtenerPerfil`, una vez por usuario único (no por fila). La SP los deja en NULL.
+- **Excel**: `Utils.ExportadorExcel.Generar(items, tipo, hoja)` arma el `.xlsx` (ClosedXML) por reflexión sobre el DTO: una columna por propiedad, las de la clase base primero, encabezado = `<DisplayName>`; las propiedades con `<Browsable(False)>` (ej. `IDReg`) van en el JSON pero no en el Excel. El orden de columnas sigue la jerarquía del DTO, salvo las que lista `ReporteRegistrosService.ColumnasExcelPrimero` (Fecha, Usuario, Legajo, CUIL, Jornada), que van primero; cambiar ahí el orden del Excel sin tocar el JSON. Para sumar una columna, agregar la propiedad al DTO del nivel correspondiente. `/exportar` devuelve exactamente los mismos registros y campos que `/registros`.
+- **Sin paginado**: se quitó el paginado de reportes (el frontend compilado en `v2/` todavía llama a `/resultado/paginado`; hay que actualizarlo a `/registros`).
 - **CORS y descargas**: `WebApiConfig` expone `Content-Disposition` (`corsPolicy.ExposedHeaders.Add(...)`; la propiedad es de solo lectura, no se puede asignar) para que el frontend lea el nombre del `.xlsx`.
+- `DTOs.Reportes.FiltroReporte` ya no lo usa la API, pero **no borrarlo**: lo usan `Aplicacion.vb` y `app/reporte.aspx.vb`.
 
 ## 4. Superficie actual de la API
 
@@ -107,16 +117,13 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 | DELETE | `/api/actividades/{id:int}` | JWT + rol `Administrador` | Baja (409 si hay registros de horas o filas de `TAREASDEV` que la referencian; en ese caso usar `Habilitada=false`) |
 | GET | `/api/registros?desde=&hasta=` | JWT | Lista registros de horas del usuario logueado en el rango (default: hoy-hoy si no se manda ninguno; 400 si desde > hasta) |
 | GET | `/api/registros/{id}` | JWT | Detalle de un registro (403 si no es el dueño) |
-| POST | `/api/registros` | JWT | Alta (Usuario = token; 409 si hay duplicado) |
-| PUT | `/api/registros/{id}` | JWT | Edición (403 si no es el dueño) |
-| DELETE | `/api/registros/{id}` | JWT | Baja (403 si no es el dueño) |
-| POST | `/api/reportes/general` | JWT | Ejecuta el SP `spReporteGeneral` con filtros |
+| POST | `/api/registros` | JWT | Alta (Usuario = token). Valida en `RegistroService.Validar` (orden del legacy): carga habilitada (`PERMITIR_CARGAS`), duración/producto/actividad, duplicado (409), rango de fechas y día laborable (estos dos no aplican a `Administrador`), proyecto en curso/cerrado (`FProyIni`/`FProyFin`), observaciones obligatorias (`ACTIV_CON_OBSERV`). Errores de regla: 400 con `{ "mensaje": "..." }` (también 409/500 devuelven `{mensaje}`) |
+| PUT | `/api/registros/{id}` | JWT | Edición (403 si no es el dueño); aplica las mismas reglas que el alta sobre la fecha nueva. Además, salvo `Administrador`, la fecha **original** del registro tiene que estar dentro del período abierto del usuario (`CalcularFechaDesde`..hoy); si no, 400 `{mensaje}` |
+| DELETE | `/api/registros/{id}` | JWT | Baja (403 si no es el dueño). 400 `{mensaje}` si `PERMITIR_CARGAS` = False o, salvo `Administrador`, si el registro está fuera del período abierto del usuario |
 | GET | `/api/reportes` | JWT | Lista reportes guardados del usuario |
 | GET | `/api/reportes/{id:guid}` | JWT | Detalle de un reporte guardado (403 si no es el dueño) |
-| POST | `/api/reportes/general/paginado?pagina=&tamanio=` | JWT | Igual que `/general` pero paginado (default pagina=1, tamanio=50, máx 200; 400 si inválidos). Devuelve `{Items, Pagina, TamanioPagina, TotalRegistros, TotalPaginas}`; solo consulta Profile de los usuarios de la página |
-| GET | `/api/reportes/{id:guid}/resultado/paginado?pagina=&tamanio=` | JWT | Igual que `/resultado` pero paginado (mismas reglas) |
-| GET | `/api/reportes/{id:guid}/exportar` | JWT | Descarga el reporte guardado como .xlsx (403 si no es el dueño). Incluye Dias.habil/Durac.tarea/Remuneracion/Costo Tarea solo si el usuario es `Administrador` o está en la lista hardcodeada de `ReporteExportacionService` (prefijos ROCCHI/CARRACEDO, mismo criterio que `habilitarRemuneraciones` de `app/`); si no, esas columnas se omiten |
-| GET | `/api/reportes/{id:guid}/resultado` | JWT | Ejecuta el reporte guardado con sus filtros y devuelve las filas (403 si no es el dueño) |
+| GET | `/api/reportes/{id:guid}/registros` | JWT | Ejecuta el reporte guardado y devuelve sus registros. Qué registros (por rol) y qué campos (Basico/Avanzado/Full) dependen de quién llama — ver "Dominio Reportes". 403 si no es el dueño o si un Avanzado pide un `DeUsuario` no permitido |
+| GET | `/api/reportes/{id:guid}/exportar` | JWT | Los mismos registros y columnas que `/registros`, como `.xlsx` (nombre = título del reporte) |
 | POST | `/api/reportes` | JWT | Crea un reporte guardado (IDRep = Guid nuevo) |
 | PUT | `/api/reportes/{id:guid}` | JWT | Edita (403 si no es el dueño) |
 | DELETE | `/api/reportes/{id:guid}` | JWT | Borra (403 si no es el dueño) |
@@ -150,6 +157,7 @@ Swashbuckle clásico (paquetes `Swashbuckle` + `Swashbuckle.Core`, **no** `Swash
 7. **Membership no tiene un "set password" directo** sin conocer la actual (`ChangePassword` la pide, `ResetPassword()` genera una propia que no podés elegir). Para forzar una password nuestra (ej. recuperación por mail) el truco es encadenar `Dim temporal = usuario.ResetPassword() : usuario.ChangePassword(temporal, nuevaPassword)` — ver `UsuarioRepository.ForzarNuevaPassword`.
 8. **`Aplicacion.Utilidades.GenerarPassword` usa `System.Random`**, no es criptográficamente seguro (y `New Random()` creado en threads distintos casi al mismo tiempo puede repetir semilla). Para generar passwords desde la API se usa `Utils.GeneradorPassword.Generar(longitud)` (`App_Code/Utils/GeneradorPassword.vb`), que usa `RandomNumberGenerator` y garantiza al menos una minúscula/mayúscula/dígito.
 9. **IDOR en `GET /{id}`**: al construir Registros y Reportes, las lecturas por ID no chequeaban ownership (solo las mutaciones) — cualquier usuario autenticado podía leer el registro/reporte de otro con solo cambiar el id. Corregido en `RegistroService.ObtenerPorId` / `ReporteGuardadoService.ObtenerPorId` (ahora devuelven `ResultadoRegistro`/`ResultadoReporte` con `Prohibido` igual que las mutaciones). Al agregar un `GET /{id}` nuevo sobre datos de un usuario, no repetir el error: aplicar el chequeo de ownership desde el principio.
+10. **Encoding de los `.vb`**: guardar los archivos nuevos o editados por agentes en **UTF-8 sin BOM** (convención del proyecto, para que los mensajes con acentos/ñ que devuelve la API salgan bien). Muchos archivos existentes generados por Visual Studio tienen BOM; no convertirlos en masa sin pedirlo.
 
 ## 7. Qué información darme si algo de esto cambió
 

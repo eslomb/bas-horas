@@ -9,9 +9,10 @@ Namespace DTOs.Reportes
     Public Class ResultadoReporte
         Public Property Estado As ResultadoOperacionReporte
         Public Property Reporte As ReporteGuardadoDTO
-        Public Property Filas As List(Of ReporteFilaDTO)
-        Public Property FilasPaginadas As ResultadoPaginadoDTO(Of ReporteFilaDTO)
+        ' Registros del reporte: cada elemento es Basico/Avanzado/Full según quién lo pide.
+        Public Property Registros As List(Of RegistroReporteBasicoDTO)
         Public Property Archivo As Byte()
+        Public Property NombreArchivo As String
         Public Property Mensaje As String
     End Class
 End Namespace

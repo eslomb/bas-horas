@@ -1,0 +1,1 @@
+import"./ClTT_5sL.js";import{b as e,mt as t}from"./DZo3dYLJ.js";import{N as n}from"#entry";import{t as r}from"./BDNMzG2s.js";var i=n(`/logoBAS.svg`),a={},o={src:i,alt:`BAS`,class:`w-auto`};function s(n,r){return t(),e(`img`,o)}var c=Object.assign(r(a,[[`render`,s]]),{__name:`AppLogo`}),l=e=>{};export{c as n,l as t};

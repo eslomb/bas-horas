@@ -1,0 +1,24 @@
+A partir de un REPORTE identificado por su IDRep, se toma un conjunto de REGISTROS filtrados por los parámetros definidos en el reporte,
+Lo que quiero es poder mostrar diferentes campos según el contexto.
+Necesitaría endpoints para mostrar el listado de registros de uno o todos usuarios usando el SP spReporteGeneral.
+Tener en cuenta el rol o nombre del usuario.
+Crear los DTOs acorde a estas necesidades para sumar los campos necesarios.
+
+Los campos a devolver son:
+
+- Basico
+Fecha_actividad, Centro, Cod_Actividad, Actividad, Pais, id_producto, producto, Horas, Minutos, Observaciones
+
+- Avanzado y Administrador hereda Basico
+A los de Basico se agrega:
+Usuario, Legajo, CUIL, Jornada (modalidad)
+
+- Full (solo para ROCCHI y CARRACEDO)
+A los campos de Avanzado se agrega:
+Dias habiles, Duracion Tarea, Remuneracion, Costo tarea.
+
+Un usuario Basico verá sus propios registros, no es necesario que se le muestre su nombre y CUIL por ejemplo.
+Un usuario avanzado o administrador verá registros de si mismo y de basicos.
+
+Estos listados deberían servir también para poder exportar a excel. 
+

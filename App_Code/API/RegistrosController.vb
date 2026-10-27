@@ -59,15 +59,17 @@ Public Class RegistrosController
     Public Function Crear(<FromBody> input As RegistroInputDTO) As IHttpActionResult
         Dim usuario = ObtenerUsuarioActual()
         If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
-        If input Is Nothing Then Return BadRequest("Debe enviar los datos del registro.")
+        If input Is Nothing Then Return Content(HttpStatusCode.BadRequest, New With {.mensaje = "Debe enviar los datos del registro."})
 
-        Dim resultado = servicio.Crear(usuario, input)
+        Dim resultado = servicio.Crear(usuario, User.IsInRole(Aplicacion.Grupos.Administrador), input)
 
         Select Case resultado.Estado
+            Case ResultadoOperacion.Invalido
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = resultado.Mensaje})
             Case ResultadoOperacion.Duplicado
-                Return Content(HttpStatusCode.Conflict, resultado.Mensaje)
+                Return Content(HttpStatusCode.Conflict, New With {.mensaje = resultado.Mensaje})
             Case ResultadoOperacion.Fallo
-                Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
+                Return Content(HttpStatusCode.InternalServerError, New With {.mensaje = resultado.Mensaje})
             Case Else
                 Return Ok(resultado.Registro)
         End Select
@@ -78,17 +80,21 @@ Public Class RegistrosController
     Public Function Actualizar(id As Integer, <FromBody> input As RegistroInputDTO) As IHttpActionResult
         Dim usuario = ObtenerUsuarioActual()
         If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
-        If input Is Nothing Then Return BadRequest("Debe enviar los datos del registro.")
+        If input Is Nothing Then Return Content(HttpStatusCode.BadRequest, New With {.mensaje = "Debe enviar los datos del registro."})
 
-        Dim resultado = servicio.Actualizar(id, usuario, input)
+        Dim resultado = servicio.Actualizar(id, usuario, User.IsInRole(Aplicacion.Grupos.Administrador), input)
 
         Select Case resultado.Estado
             Case ResultadoOperacion.NoEncontrado
                 Return NotFound()
             Case ResultadoOperacion.Prohibido
                 Return StatusCode(HttpStatusCode.Forbidden)
+            Case ResultadoOperacion.Invalido
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = resultado.Mensaje})
+            Case ResultadoOperacion.Duplicado
+                Return Content(HttpStatusCode.Conflict, New With {.mensaje = resultado.Mensaje})
             Case ResultadoOperacion.Fallo
-                Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
+                Return Content(HttpStatusCode.InternalServerError, New With {.mensaje = resultado.Mensaje})
             Case Else
                 Return Ok(resultado.Registro)
         End Select
@@ -100,15 +106,17 @@ Public Class RegistrosController
         Dim usuario = ObtenerUsuarioActual()
         If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
 
-        Dim resultado = servicio.Eliminar(id, usuario)
+        Dim resultado = servicio.Eliminar(id, usuario, User.IsInRole(Aplicacion.Grupos.Administrador))
 
         Select Case resultado.Estado
             Case ResultadoOperacion.NoEncontrado
                 Return NotFound()
             Case ResultadoOperacion.Prohibido
                 Return StatusCode(HttpStatusCode.Forbidden)
+            Case ResultadoOperacion.Invalido
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = resultado.Mensaje})
             Case ResultadoOperacion.Fallo
-                Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
+                Return Content(HttpStatusCode.InternalServerError, New With {.mensaje = resultado.Mensaje})
             Case Else
                 Return Ok()
         End Select

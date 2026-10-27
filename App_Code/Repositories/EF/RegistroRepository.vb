@@ -29,7 +29,9 @@ Namespace Repositories.EF
         End Function
 
         Public Function Existe(registro As REGISTROS) As Boolean Implements IRegistroRepository.Existe
-            Return cntx.REGISTROS.Any(Function(r) r.Fecha = registro.Fecha AndAlso
+            ' IDReg = 0 en un alta; en una edición excluye al propio registro para que no se detecte a sí mismo.
+            Return cntx.REGISTROS.Any(Function(r) r.IDReg <> registro.IDReg AndAlso
+                                                    r.Fecha = registro.Fecha AndAlso
                                                     r.idProducto = registro.idProducto AndAlso
                                                     r.idActividad = registro.idActividad AndAlso
                                                     r.Usuario = registro.Usuario AndAlso

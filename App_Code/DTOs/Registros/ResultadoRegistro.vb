@@ -4,6 +4,7 @@ Namespace DTOs.Registros
         NoEncontrado
         Prohibido
         Duplicado
+        Invalido
         Fallo
     End Enum
 

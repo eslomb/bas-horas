@@ -14,9 +14,5 @@ Namespace Repositories.EF
         Public Function ListarRemuneraciones() As IQueryable(Of REMUNERACIONES) Implements IRemuneracionRepository.ListarRemuneraciones
             Return cntx.REMUNERACIONES.AsNoTracking()
         End Function
-
-        Public Function ListarDiasHabiles() As IQueryable(Of DIAS_HABILES) Implements IRemuneracionRepository.ListarDiasHabiles
-            Return cntx.DIAS_HABILES.AsNoTracking()
-        End Function
     End Class
 End Namespace

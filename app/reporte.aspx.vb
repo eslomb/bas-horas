@@ -301,6 +301,9 @@ Partial Class app_reporte
     Protected Function CantidadDiasHabiles(fecha As Date) As Int16?
         Dim mes As Int16 = fecha.Month
         Dim anio As Int16 = fecha.Year
+        If diasHabiles Is Nothing Then
+            Return Nothing
+        End If
         Dim q = diasHabiles.Where(Function(d) d.Mes.Equals(mes) And d.Anio.Equals(anio)).FirstOrDefault
 
         If q IsNot Nothing Then

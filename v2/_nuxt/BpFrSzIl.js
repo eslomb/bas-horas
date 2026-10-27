@@ -1,1 +1,0 @@
-import{Z as e,d as t,p as n}from"./BwBmFCAU.js";import{t as r}from"./Bxd2Y7mL.js";var i=t(async()=>{let t,i,a=r();if(a.isAuthenticated||([t,i]=e(()=>a.sso()),t=await t,i()),a.isAuthenticated)return n(`/dashboard`)},1);export{i as default};

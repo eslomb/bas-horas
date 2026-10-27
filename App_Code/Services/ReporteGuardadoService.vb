@@ -8,13 +8,9 @@ Namespace Services
         Implements IReporteGuardadoService
 
         Private ReadOnly repo As IReporteGuardadoRepository
-        Private ReadOnly reporteGeneral As IReporteGeneralService
-        Private ReadOnly exportacion As IReporteExportacionService
 
-        Public Sub New(repo As IReporteGuardadoRepository, reporteGeneral As IReporteGeneralService, exportacion As IReporteExportacionService)
+        Public Sub New(repo As IReporteGuardadoRepository)
             Me.repo = repo
-            Me.reporteGeneral = reporteGeneral
-            Me.exportacion = exportacion
         End Sub
 
         Public Function Listar(usuario As String) As List(Of ReporteGuardadoDTO) Implements IReporteGuardadoService.Listar
@@ -33,75 +29,6 @@ Namespace Services
             End If
 
             Return New ResultadoReporte With {.Estado = ResultadoOperacionReporte.Ok, .Reporte = MapearDTO(entidad)}
-        End Function
-
-        Public Function EjecutarPorId(id As Guid, usuario As String) As ResultadoReporte Implements IReporteGuardadoService.EjecutarPorId
-            Dim entidad As REPORTES = Nothing
-            Dim rechazo = ValidarAcceso(id, usuario, entidad)
-            If rechazo IsNot Nothing Then Return rechazo
-
-            Return New ResultadoReporte With {
-                .Estado = ResultadoOperacionReporte.Ok,
-                .Reporte = MapearDTO(entidad),
-                .Filas = reporteGeneral.GenerarReporteGeneral(ArmarFiltros(entidad, usuario))
-            }
-        End Function
-
-        Public Function EjecutarPorIdPaginado(id As Guid, usuario As String, pagina As Integer, tamanioPagina As Integer) As ResultadoReporte Implements IReporteGuardadoService.EjecutarPorIdPaginado
-            Dim entidad As REPORTES = Nothing
-            Dim rechazo = ValidarAcceso(id, usuario, entidad)
-            If rechazo IsNot Nothing Then Return rechazo
-
-            Return New ResultadoReporte With {
-                .Estado = ResultadoOperacionReporte.Ok,
-                .Reporte = MapearDTO(entidad),
-                .FilasPaginadas = reporteGeneral.GenerarReporteGeneralPaginado(ArmarFiltros(entidad, usuario), pagina, tamanioPagina)
-            }
-        End Function
-
-        Public Function ExportarPorId(id As Guid, usuario As String, esAdministrador As Boolean) As ResultadoReporte Implements IReporteGuardadoService.ExportarPorId
-            Dim entidad As REPORTES = Nothing
-            Dim rechazo = ValidarAcceso(id, usuario, entidad)
-            If rechazo IsNot Nothing Then Return rechazo
-
-            Try
-                Return New ResultadoReporte With {
-                    .Estado = ResultadoOperacionReporte.Ok,
-                    .Reporte = MapearDTO(entidad),
-                    .Archivo = exportacion.GenerarExcel(ArmarFiltros(entidad, usuario), entidad.Titulo, usuario, esAdministrador)
-                }
-            Catch
-                Return New ResultadoReporte With {.Estado = ResultadoOperacionReporte.Fallo, .Mensaje = "No se pudo generar el archivo Excel."}
-            End Try
-        End Function
-
-        ' Devuelve Nothing si el reporte existe y es del usuario (y lo deja en entidad); si no, el resultado de rechazo.
-        Private Function ValidarAcceso(id As Guid, usuario As String, ByRef entidad As REPORTES) As ResultadoReporte
-            entidad = repo.ObtenerPorId(id)
-
-            If entidad Is Nothing Then
-                Return New ResultadoReporte With {.Estado = ResultadoOperacionReporte.NoEncontrado}
-            End If
-
-            If Not entidad.Usuario.Equals(usuario, StringComparison.OrdinalIgnoreCase) Then
-                Return New ResultadoReporte With {.Estado = ResultadoOperacionReporte.Prohibido}
-            End If
-
-            Return Nothing
-        End Function
-
-        Private Shared Function ArmarFiltros(entidad As REPORTES, usuario As String) As FiltroReporte
-            ' El SP trata 0 como "todos" en producto/actividad.
-            ' El Usuario del SP es siempre el logueado (no entidad.DeUsuario): el reporte solo trae sus propias tareas.
-            Return New FiltroReporte With {
-                .Desde = entidad.Desde,
-                .Hasta = entidad.Hasta,
-                .Usuario = usuario,
-                .Idprod = If(entidad.Producto_id, 0),
-                .IdAct = If(entidad.Actividad_id, 0),
-                .CodPais = entidad.CodPais,
-                .Centro = entidad.DeCentro
-            }
         End Function
 
         Public Function Crear(usuario As String, input As ReporteGuardadoInputDTO) As ResultadoReporte Implements IReporteGuardadoService.Crear

@@ -38,6 +38,17 @@
           <Property Name="Mes" Type="int" Nullable="false" />
           <Property Name="CantDias" Type="int" Nullable="false" />
         </EntityType>
+        <EntityType Name="FEEDBACK">
+          <Key>
+            <PropertyRef Name="IDFeedback" />
+          </Key>
+          <Property Name="IDFeedback" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Usuario" Type="nvarchar" MaxLength="256" Nullable="false" />
+          <Property Name="Email" Type="nvarchar" MaxLength="256" />
+          <Property Name="Comentario" Type="nvarchar" MaxLength="2000" Nullable="false" />
+          <Property Name="Tipo" Type="varchar" MaxLength="20" Nullable="false" />
+          <Property Name="Fecha" Type="datetime" StoreGeneratedPattern="Computed" Nullable="false" />
+        </EntityType>
         <EntityType Name="FERIADOS">
           <Key>
             <PropertyRef Name="Feriado" />
@@ -195,6 +206,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySet Name="CENTROS" EntityType="Self.CENTROS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="CONFIGURACIONES" EntityType="Self.CONFIGURACIONES" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="DIAS_HABILES" EntityType="Self.DIAS_HABILES" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="FEEDBACK" EntityType="Self.FEEDBACK" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="FERIADOS" EntityType="Self.FERIADOS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PAISES" EntityType="Self.PAISES" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PRODUCTOS" EntityType="Self.PRODUCTOS" Schema="dbo" store:Type="Tables" />
@@ -269,6 +281,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySet Name="FERIADOS" EntityType="BASHorasModel.FERIADOS" />
           <EntitySet Name="REMUNERACIONES" EntityType="BASHorasModel.REMUNERACIONES" />
           <EntitySet Name="DIAS_HABILES" EntityType="BASHorasModel.DIAS_HABILES" />
+          <EntitySet Name="FEEDBACK" EntityType="BASHorasModel.FEEDBACK" />
           <FunctionImport Name="spReporteGeneral" ReturnType="Collection(BASHorasModel.spReporteGeneral_Result)">
             <Parameter Name="Desde" Mode="In" Type="DateTime" />
             <Parameter Name="Hasta" Mode="In" Type="DateTime" />
@@ -445,6 +458,17 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Name="Mes" Type="Int32" Nullable="false" />
           <Property Name="CantDias" Type="Int32" Nullable="false" />
         </EntityType>
+        <EntityType Name="FEEDBACK">
+          <Key>
+            <PropertyRef Name="IDFeedback" />
+          </Key>
+          <Property Name="IDFeedback" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Comentario" Type="String" Nullable="false" MaxLength="2000" FixedLength="false" Unicode="true" />
+          <Property Name="Tipo" Type="String" Nullable="false" MaxLength="20" FixedLength="false" Unicode="false" />
+          <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" annotation:StoreGeneratedPattern="Computed" />
+        </EntityType>
         <ComplexType Name="spReporteGeneral_Result">
           <Property Type="Int32" Name="IDReg" Nullable="false" />
           <Property Type="DateTime" Name="FECHA_ACTIVIDAD" Nullable="false" Precision="23" />
@@ -607,6 +631,18 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
                 <ScalarProperty Name="Mes" ColumnName="Mes" />
                 <ScalarProperty Name="Anio" ColumnName="Anio" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="FEEDBACK">
+            <EntityTypeMapping TypeName="BASHorasModel.FEEDBACK">
+              <MappingFragment StoreEntitySet="FEEDBACK">
+                <ScalarProperty Name="Fecha" ColumnName="Fecha" />
+                <ScalarProperty Name="Tipo" ColumnName="Tipo" />
+                <ScalarProperty Name="Comentario" ColumnName="Comentario" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
+                <ScalarProperty Name="IDFeedback" ColumnName="IDFeedback" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

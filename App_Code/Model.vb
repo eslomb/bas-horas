@@ -37,6 +37,15 @@ Partial Public Class DIAS_HABILES
     Public Property CantDias As Integer
 
 End Class
+Partial Public Class FEEDBACK
+    Public Property IDFeedback As Integer
+    Public Property Usuario As String
+    Public Property Email As String
+    Public Property Comentario As String
+    Public Property Tipo As String
+    Public Property Fecha As Date
+
+End Class
 Partial Public Class FERIADOS
     Public Property Feriado As Date
     Public Property Motivo As String

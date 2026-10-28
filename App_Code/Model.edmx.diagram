@@ -19,6 +19,7 @@
         <EntityTypeShape EntityType="BASHorasModel.FERIADOS" Width="1.5" PointX="12.625" PointY="0.5" />
         <EntityTypeShape EntityType="BASHorasModel.REMUNERACIONES" Width="1.5" PointX="12.625" PointY="2.25" />
         <EntityTypeShape EntityType="BASHorasModel.DIAS_HABILES" Width="1.5" PointX="3.375" PointY="6.75" />
+        <EntityTypeShape EntityType="BASHorasModel.FEEDBACK" Width="1.5" PointX="12.625" PointY="5" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

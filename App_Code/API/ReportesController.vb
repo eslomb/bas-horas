@@ -45,14 +45,22 @@ Public Class ReportesController
         End Select
     End Function
 
-    ' Registros del reporte. Qué registros y qué campos se devuelven depende del rol/usuario (ver ReporteRegistrosService).
+    Private Const TamanioPaginaPorDefecto As Integer = 50
+    Private Const TamanioPaginaMaximo As Integer = 1000
+
+    ' Registros del reporte, paginados. Qué registros y qué campos se devuelven depende del rol/usuario (ver ReporteRegistrosService).
+    ' Mismas reglas de paginado que GET api/registros: valores fuera de rango se ajustan en vez de dar 400.
     <HttpGet>
     <Route("api/reportes/{id:guid}/registros")>
-    Public Function ObtenerRegistros(id As Guid) As IHttpActionResult
+    Public Function ObtenerRegistros(id As Guid, Optional pagina As Integer = 1, Optional tamanioPagina As Integer = TamanioPaginaPorDefecto) As IHttpActionResult
         Dim usuario = ObtenerUsuarioActual()
         If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
 
-        Dim resultado = servicioRegistros.ObtenerRegistros(id, usuario)
+        If pagina < 1 Then pagina = 1
+        If tamanioPagina < 1 Then tamanioPagina = TamanioPaginaPorDefecto
+        If tamanioPagina > TamanioPaginaMaximo Then tamanioPagina = TamanioPaginaMaximo
+
+        Dim resultado = servicioRegistros.ObtenerRegistros(id, usuario, pagina, tamanioPagina)
 
         Select Case resultado.Estado
             Case ResultadoOperacionReporte.NoEncontrado

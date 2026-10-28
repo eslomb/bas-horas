@@ -59,7 +59,7 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 ### Dominio Reportes — decisiones de diseño
 
 - **Dos servicios**: `ReporteGuardadoService` es CRUD puro sobre `REPORTES` (con ownership). `ReporteRegistrosService` ejecuta un reporte guardado (`spReporteGeneral` vía `IReporteGeneralRepository`) y devuelve/exporta sus registros. No hay endpoint de filtros libres: el viejo `POST /api/reportes/general` se eliminó porque dejaba ver registros de cualquier usuario sin control de rol.
-- **Qué registros ve cada uno** (`ReporteRegistrosService.Ejecutar`, siempre sobre un reporte propio, 403 si no):
+- **Qué registros ve cada uno** (`ReporteRegistrosService.Preparar`, siempre sobre un reporte propio, 403 si no):
   - `Basico` (o sin rol): solo los propios; `REPORTES.DeUsuario` se ignora.
   - `Avanzado`: los propios y los de todos los usuarios `Basico` (sin restricción por Centro). Si `DeUsuario` apunta a otro usuario → 403 `{mensaje}`.
   - `Administrador`: todos, o solo `DeUsuario` si el reporte lo define.
@@ -68,10 +68,10 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
   - `RegistroReporteBasicoDTO`: IDReg (para editar/borrar vía `/api/registros/{id}`), Fecha, Centro, Cod/Actividad, Pais, IdProducto/Producto, Horas, Minutos, Observaciones.
   - `RegistroReporteAvanzadoDTO` (Avanzado y Administrador): + Usuario, Legajo, CUIL, Jornada (= `Profile.Modalidad`).
   - `RegistroReporteFullDTO` (solo usuarios cuyo nombre empieza con un prefijo de `UsuariosNivelFull`: ROCCHI, CARRACEDO, mismo criterio que `habilitarRemuneraciones` de `app/`; independiente del rol): + Dias.habil (`DIAS_HABILES`), Durac.tarea, Remuneracion (`REMUNERACIONES` por usuario/mes/año de la tarea), Costo Tarea (= Remuneracion / DiasHabiles / Jornada × duración; vacío si falta algún dato). Un Administrador que no está en esa lista **no** ve costos.
-  - El endpoint devuelve `List(Of RegistroReporteBasicoDTO)` con instancias del nivel que corresponda; Json.NET serializa el tipo real de cada elemento, así que el JSON trae los campos del nivel (Swagger solo documenta los del Basico).
+  - `Items` es una `List(Of RegistroReporteBasicoDTO)` con instancias del nivel que corresponda; Json.NET serializa el tipo real de cada elemento, así que el JSON trae los campos del nivel (Swagger solo documenta los del Basico).
 - **Profile**: Legajo/Centro/CUIL/Jornada salen del Profile vía `IUsuarioRepository.ObtenerPerfil`, una vez por usuario único (no por fila). La SP los deja en NULL.
 - **Excel**: `Utils.ExportadorExcel.Generar(items, tipo, hoja)` arma el `.xlsx` (ClosedXML) por reflexión sobre el DTO: una columna por propiedad, las de la clase base primero, encabezado = `<DisplayName>`; las propiedades con `<Browsable(False)>` (ej. `IDReg`) van en el JSON pero no en el Excel. El orden de columnas sigue la jerarquía del DTO, salvo las que lista `ReporteRegistrosService.ColumnasExcelPrimero` (Fecha, Usuario, Legajo, CUIL, Jornada), que van primero; cambiar ahí el orden del Excel sin tocar el JSON. Para sumar una columna, agregar la propiedad al DTO del nivel correspondiente. `/exportar` devuelve exactamente los mismos registros y campos que `/registros`.
-- **Sin paginado**: se quitó el paginado de reportes (el frontend compilado en `v2/` todavía llama a `/resultado/paginado`; hay que actualizarlo a `/registros`).
+- **Paginado** (`ReporteRegistrosService.ObtenerRegistros`): el SP no pagina, así que se ejecuta completo, se filtra por rol y centro, se ordena (FechaActividad desc, IDReg desc — orden determinista, el del dashboard) y recién ahí `Skip/Take`. `TotalRegistros` es el conteo antes de paginar. Perfiles, remuneraciones/días hábiles y mapeo a DTO se hacen solo para la página, salvo que el reporte tenga `DeCentro` (ese filtro necesita el Profile de todos los usuarios). `/exportar` **no** pagina: todas las filas, en el orden del SP. La validación/visibilidad común a ambos está en `Preparar`.
 - **CORS y descargas**: `WebApiConfig` expone `Content-Disposition` (`corsPolicy.ExposedHeaders.Add(...)`; la propiedad es de solo lectura, no se puede asignar) para que el frontend lea el nombre del `.xlsx`.
 - `DTOs.Reportes.FiltroReporte` ya no lo usa la API, pero **no borrarlo**: lo usan `Aplicacion.vb` y `app/reporte.aspx.vb`.
 
@@ -122,7 +122,7 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 | DELETE | `/api/registros/{id}` | JWT | Baja (403 si no es el dueño). 400 `{mensaje}` si `PERMITIR_CARGAS` = False o, salvo `Administrador`, si el registro está fuera del período abierto del usuario |
 | GET | `/api/reportes` | JWT | Lista reportes guardados del usuario |
 | GET | `/api/reportes/{id:guid}` | JWT | Detalle de un reporte guardado (403 si no es el dueño) |
-| GET | `/api/reportes/{id:guid}/registros` | JWT | Ejecuta el reporte guardado y devuelve sus registros. Qué registros (por rol) y qué campos (Basico/Avanzado/Full) dependen de quién llama — ver "Dominio Reportes". 403 si no es el dueño o si un Avanzado pide un `DeUsuario` no permitido |
+| GET | `/api/reportes/{id:guid}/registros?pagina=&tamanioPagina=` | JWT | Ejecuta el reporte guardado y devuelve una página de sus registros en `ResultadoPaginado` (`Items`, `TotalRegistros`, `Pagina`, `TamanioPagina`, `TotalPaginas`). `pagina` default 1, `tamanioPagina` default 50, máx 1000 (fuera de rango se ajusta, como `/api/registros`). Qué registros (por rol) y qué campos (Basico/Avanzado/Full) dependen de quién llama — ver "Dominio Reportes". 403 si no es el dueño o si un Avanzado pide un `DeUsuario` no permitido |
 | GET | `/api/reportes/{id:guid}/exportar` | JWT | Los mismos registros y columnas que `/registros`, como `.xlsx` (nombre = título del reporte) |
 | POST | `/api/reportes` | JWT | Crea un reporte guardado (IDRep = Guid nuevo) |
 | PUT | `/api/reportes/{id:guid}` | JWT | Edita (403 si no es el dueño) |

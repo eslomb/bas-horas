@@ -38,27 +38,64 @@ Namespace Services
             Me.diasHabiles = diasHabiles
         End Sub
 
-        Public Function ObtenerRegistros(id As Guid, usuario As String) As ResultadoReporte Implements IReporteRegistrosService.ObtenerRegistros
-            Dim nivel As NivelDetalleReporte
-            Return Ejecutar(id, usuario, nivel)
+        ' Resultado de Preparar: filas ya filtradas por rol y centro, listas para paginar/mapear.
+        Private Class Consulta
+            Public Filas As List(Of spReporteGeneral_Result)
+            Public Perfiles As Dictionary(Of String, ProfileCommon)
+            Public Nivel As NivelDetalleReporte
+            Public Titulo As String
+        End Class
+
+        Public Function ObtenerRegistros(id As Guid, usuario As String, pagina As Integer, tamanioPagina As Integer) As ResultadoReporte Implements IReporteRegistrosService.ObtenerRegistros
+            Dim consulta As Consulta = Nothing
+            Dim rechazo = Preparar(id, usuario, consulta)
+            If rechazo IsNot Nothing Then Return rechazo
+
+            ' Orden determinista antes de paginar (mismo que el dashboard), para no repetir ni saltear filas entre páginas.
+            Dim filasPagina = consulta.Filas.
+                OrderByDescending(Function(f) f.FECHA_ACTIVIDAD).
+                ThenByDescending(Function(f) f.IDReg).
+                Skip((pagina - 1) * tamanioPagina).
+                Take(tamanioPagina).
+                ToList()
+
+            ' Perfiles y mapeo solo para la página pedida.
+            CargarPerfiles(consulta.Perfiles, filasPagina)
+
+            Return New ResultadoReporte With {
+                .Estado = ResultadoOperacionReporte.Ok,
+                .Registros = New DTOs.ResultadoPaginado(Of RegistroReporteBasicoDTO) With {
+                    .Items = Mapear(filasPagina, consulta.Perfiles, consulta.Nivel),
+                    .TotalRegistros = consulta.Filas.Count,
+                    .Pagina = pagina,
+                    .TamanioPagina = tamanioPagina
+                }
+            }
         End Function
 
+        ' Todas las filas, sin paginar, en el orden del SP.
         Public Function Exportar(id As Guid, usuario As String) As ResultadoReporte Implements IReporteRegistrosService.Exportar
-            Dim nivel As NivelDetalleReporte
-            Dim resultado = Ejecutar(id, usuario, nivel)
-            If resultado.Estado <> ResultadoOperacionReporte.Ok Then Return resultado
+            Dim consulta As Consulta = Nothing
+            Dim rechazo = Preparar(id, usuario, consulta)
+            If rechazo IsNot Nothing Then Return rechazo
+
+            CargarPerfiles(consulta.Perfiles, consulta.Filas)
 
             Try
-                resultado.Archivo = ExportadorExcel.Generar(resultado.Registros, TipoDTO(nivel), "Registros", ColumnasExcelPrimero)
+                Dim registros = Mapear(consulta.Filas, consulta.Perfiles, consulta.Nivel)
+                Return New ResultadoReporte With {
+                    .Estado = ResultadoOperacionReporte.Ok,
+                    .Archivo = ExportadorExcel.Generar(registros, TipoDTO(consulta.Nivel), "Registros", ColumnasExcelPrimero),
+                    .NombreArchivo = NombreArchivo(consulta.Titulo)
+                }
             Catch
                 Return New ResultadoReporte With {.Estado = ResultadoOperacionReporte.Fallo, .Mensaje = "No se pudo generar el archivo Excel."}
             End Try
-
-            resultado.Registros = Nothing
-            Return resultado
         End Function
 
-        Private Function Ejecutar(id As Guid, usuario As String, ByRef nivel As NivelDetalleReporte) As ResultadoReporte
+        ' Valida el reporte (existe, es propio, DeUsuario permitido), ejecuta el SP y filtra por rol y centro.
+        ' Devuelve Nothing y deja la consulta armada; si no, el resultado de rechazo.
+        Private Function Preparar(id As Guid, usuario As String, ByRef consulta As Consulta) As ResultadoReporte
             Dim reporte = reportes.ObtenerPorId(id)
 
             If reporte Is Nothing Then
@@ -102,20 +139,22 @@ Namespace Services
                 filas = filas.Where(Function(f) f.USUARIO IsNot Nothing AndAlso visibles.Contains(f.USUARIO)).ToList()
             End If
 
-            Dim perfiles = CargarPerfiles(filas)
+            Dim perfiles As New Dictionary(Of String, ProfileCommon)(StringComparer.OrdinalIgnoreCase)
 
+            ' El filtro por Centro es el único que necesita el Profile de todos los usuarios, no solo los de la página.
             If Not String.IsNullOrWhiteSpace(reporte.DeCentro) Then
+                CargarPerfiles(perfiles, filas)
                 Dim centros As New HashSet(Of String)(reporte.DeCentro.Replace(" ", "").Split(","c), StringComparer.OrdinalIgnoreCase)
                 filas = filas.Where(Function(f) centros.Contains(CentroDe(f.USUARIO, perfiles))).ToList()
             End If
 
-            nivel = DeterminarNivel(usuario, esAdministrador OrElse esAvanzado)
-
-            Return New ResultadoReporte With {
-                .Estado = ResultadoOperacionReporte.Ok,
-                .Registros = Mapear(filas, perfiles, nivel),
-                .NombreArchivo = NombreArchivo(reporte.Titulo)
+            consulta = New Consulta With {
+                .Filas = filas,
+                .Perfiles = perfiles,
+                .Nivel = DeterminarNivel(usuario, esAdministrador OrElse esAvanzado),
+                .Titulo = reporte.Titulo
             }
+            Return Nothing
         End Function
 
         Private Shared Function DeterminarNivel(usuario As String, esAvanzadoOAdmin As Boolean) As NivelDetalleReporte
@@ -132,14 +171,18 @@ Namespace Services
             End Select
         End Function
 
-        ' Un Profile por usuario único, no por fila.
-        Private Function CargarPerfiles(filas As List(Of spReporteGeneral_Result)) As Dictionary(Of String, ProfileCommon)
-            Dim perfiles As New Dictionary(Of String, ProfileCommon)(StringComparer.OrdinalIgnoreCase)
-            For Each u In filas.Select(Function(f) f.USUARIO).Where(Function(x) Not String.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase)
+        ' Un Profile por usuario único, no por fila; solo los que todavía no están en el diccionario.
+        Private Sub CargarPerfiles(perfiles As Dictionary(Of String, ProfileCommon), filas As List(Of spReporteGeneral_Result))
+            Dim pendientes = filas.
+                Select(Function(f) f.USUARIO).
+                Where(Function(x) Not String.IsNullOrWhiteSpace(x) AndAlso Not perfiles.ContainsKey(x)).
+                Distinct(StringComparer.OrdinalIgnoreCase).
+                ToList()
+
+            For Each u In pendientes
                 perfiles(u) = usuarios.ObtenerPerfil(u)
             Next
-            Return perfiles
-        End Function
+        End Sub
 
         Private Shared Function PerfilDe(usuario As String, perfiles As Dictionary(Of String, ProfileCommon)) As ProfileCommon
             Dim perfil As ProfileCommon = Nothing

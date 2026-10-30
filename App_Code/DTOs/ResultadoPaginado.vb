@@ -1,4 +1,4 @@
-Namespace DTOs
+﻿Namespace DTOs
     ' Envelope genérico reusable para cualquier listado paginado de la API.
     Public Class ResultadoPaginado(Of T)
         Public Property Items As List(Of T)

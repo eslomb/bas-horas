@@ -1,4 +1,4 @@
-Imports System.Web.Http
+﻿Imports System.Web.Http
 Imports Swashbuckle.Application
 
 Public Module SwaggerConfig

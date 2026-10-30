@@ -1,4 +1,4 @@
-Imports System.Linq
+﻿Imports System.Linq
 Imports DTOs
 Imports DTOs.Registros
 Imports Repositories.Interfaces

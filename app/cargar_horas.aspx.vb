@@ -50,6 +50,10 @@ Partial Class app_cargar_horas
     Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
 
         If Not IsPostBack Then
+            If usuarioEsBasico Then
+                pnl_novedad.Visible = True
+            End If
+
             ddl_usuarios.DataSource = bll.listarUsuarios()
             ddl_usuarios.DataBind()
             ddl_usuarios.SelectedValue = nombreUsuarioLogueado

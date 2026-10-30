@@ -28,6 +28,61 @@ Namespace Services
             Return repo.ObtenerTodos().Select(Function(u) MapearDTO(u)).ToList()
         End Function
 
+        ' Mismo tope que el formulario de usuarios del frontend.
+        Private Const PeriodoMaximo As Int16 = 180
+
+        ' Equipo: usuarios cuyo Dependencia es el Legajo de quien consulta (como usuarios-dependientes.aspx, pero
+        ' con comparación exacta en vez de Contains). Sin legajo no hay equipo: si no, entrarían todos los que
+        ' tienen Dependencia vacía.
+        Public Function ListarEquipo(userName As String) As List(Of UsuarioDTO) Implements IUsuarioService.ListarEquipo
+            Dim legajo = If(repo.ObtenerPerfil(userName).Legajo, "").Trim()
+            If legajo = "" Then Return New List(Of UsuarioDTO)
+
+            Return Listar().
+                Where(Function(u) String.Equals(If(u.Dependencia, "").Trim(), legajo, StringComparison.OrdinalIgnoreCase)).
+                OrderBy(Function(u) u.UserName).
+                ToList()
+        End Function
+
+        ' Cambia solo el PeriodoAbierto de usuarios del equipo. Se valida todo antes de escribir; los perfiles se
+        ' guardan de a uno (Profile no tiene transacción), así que un fallo a mitad deja guardados los anteriores.
+        Public Function ActualizarPeriodosEquipo(userName As String, periodos As List(Of PeriodoEquipoInputDTO)) As ResultadoUsuario Implements IUsuarioService.ActualizarPeriodosEquipo
+            If periodos Is Nothing OrElse periodos.Count = 0 Then
+                Return Invalido("Debe enviar al menos un período.")
+            End If
+
+            Dim equipo = ListarEquipo(userName).ToDictionary(Function(u) u.UserName, StringComparer.OrdinalIgnoreCase)
+            Dim cambios As New List(Of PeriodoEquipoInputDTO)
+
+            For Each p In periodos
+                Dim miembro As UsuarioDTO = Nothing
+                If p Is Nothing OrElse String.IsNullOrEmpty(p.UserName) Then
+                    Return Invalido("Falta el usuario en uno de los períodos.")
+                End If
+                If Not equipo.TryGetValue(p.UserName, miembro) Then
+                    Return Invalido("El usuario " & p.UserName & " no pertenece a su equipo.")
+                End If
+                If Not p.PeriodoAbierto.HasValue OrElse p.PeriodoAbierto.Value < 0 OrElse p.PeriodoAbierto.Value > PeriodoMaximo Then
+                    Return Invalido("El período de " & miembro.UserName & " debe ser un número entre 0 y " & PeriodoMaximo & ".")
+                End If
+                If p.PeriodoAbierto.Value <> miembro.PeriodoAbierto Then cambios.Add(p)
+            Next
+
+            Dim guardados = 0
+            For Each p In cambios
+                Try
+                    Dim perfil = repo.ObtenerPerfil(equipo(p.UserName).UserName)
+                    perfil.PeriodoAbierto = p.PeriodoAbierto.Value
+                    repo.ActualizarPerfil(perfil)
+                    guardados += 1
+                Catch
+                    Return Fallo("No se pudo guardar el período de " & p.UserName & ". Se guardaron " & guardados & " de " & cambios.Count & " cambios.")
+                End Try
+            Next
+
+            Return New ResultadoUsuario With {.Estado = ResultadoOperacionUsuario.Ok}
+        End Function
+
         Public Function ActualizarPerfilPropio(userName As String, input As ActualizarPerfilPropioInputDTO) As ResultadoUsuario Implements IUsuarioService.ActualizarPerfilPropio
             Dim usuario = repo.ObtenerPorUserName(userName)
             If usuario Is Nothing Then

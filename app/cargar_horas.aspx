@@ -4,8 +4,27 @@
 <%@ Register TagPrefix="cc" TagName="Tarea" Src="~/Controles/Tarea.ascx" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="cph_contenido" runat="Server">
-
+    <style>
+        .panel-info{
+            max-width: 540px;
+            margin: auto;
+            text-align: center;
+        }
+        .panel-heading h4 {
+            font-size: 1.5rem;
+            margin-block: 0rem;
+        }
+    </style>
     <h1 class="tituloPagina">Sistema de carga de horas</h1>
+
+    <asp:Panel runat="server" ID="pnl_novedad" CssClass="panel panel-info" Visible="false">
+        <div class="panel-heading"><h4>Novedad</h4></div>
+        <div class="panel-body">
+            <h5>Se encuentra disponible en fase de desarrollo la nueva versión de BASHoras.</h5>
+            <p>Próximamente quedará fuera de uso la versión actual del sistema.</p>
+            <p style="margin-top: 20px;"><a class="btn btn-info btn-md" href="../v2/" role="button">Acceder</a></p>
+        </div>
+    </asp:Panel>
 
     <asp:Panel runat="server"  ID="pnl_controles" CssClass="row">
         <div class="col-md-4">

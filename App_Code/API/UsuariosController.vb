@@ -67,6 +67,36 @@ Public Class UsuariosController
         End Select
     End Function
 
+    ' --- Equipo: usuarios cuyo Dependencia es el Legajo de quien llama ---
+
+    <HttpGet>
+    <JwtAuthorize(Roles:="Avanzado,Administrador")>
+    <Route("api/usuarios/equipo")>
+    Public Function ListarEquipo() As IHttpActionResult
+        Dim usuario = ObtenerUsuarioActual()
+        If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
+        Return Ok(servicio.ListarEquipo(usuario))
+    End Function
+
+    <HttpPut>
+    <JwtAuthorize(Roles:="Avanzado,Administrador")>
+    <Route("api/usuarios/equipo/periodos")>
+    Public Function ActualizarPeriodosEquipo(<FromBody> periodos As List(Of PeriodoEquipoInputDTO)) As IHttpActionResult
+        Dim usuario = ObtenerUsuarioActual()
+        If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
+
+        Dim resultado = servicio.ActualizarPeriodosEquipo(usuario, periodos)
+
+        Select Case resultado.Estado
+            Case ResultadoOperacionUsuario.Invalido
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = resultado.Mensaje})
+            Case ResultadoOperacionUsuario.Fallo
+                Return Content(HttpStatusCode.InternalServerError, New With {.mensaje = resultado.Mensaje})
+            Case Else
+                Return Ok(servicio.ListarEquipo(usuario))
+        End Select
+    End Function
+
     ' --- Administración: requiere rol Administrador ---
 
     <HttpGet>

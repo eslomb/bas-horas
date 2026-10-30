@@ -1,4 +1,4 @@
-Namespace DTOs.Reportes
+﻿Namespace DTOs.Reportes
     Public Enum ResultadoOperacionReporte
         Ok
         NoEncontrado

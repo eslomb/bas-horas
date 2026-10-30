@@ -1,4 +1,4 @@
-Imports System.ComponentModel
+﻿Imports System.ComponentModel
 
 Namespace DTOs.Reportes
     ' Nivel de detalle con que se devuelven los registros de un reporte, según quién lo pide.

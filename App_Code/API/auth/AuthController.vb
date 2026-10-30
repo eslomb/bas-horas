@@ -66,6 +66,49 @@ Namespace Auth
             })
         End Function
 
+        ' Un administrador entra como otro usuario sin su contraseña. El token lleva el claim "act" con el
+        ' administrador y dura menos que el normal. Volver a la cuenta propia lo resuelve el frontend con su token original.
+        <HttpPost>
+        <JwtAuthorize(Roles:="Administrador")>
+        <Route("api/auth/suplantar")>
+        Public Function Suplantar(<FromBody> request As SuplantarInputDTO) As IHttpActionResult
+            If request Is Nothing OrElse String.IsNullOrWhiteSpace(request.UserName) Then
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = "Debe indicar el usuario."})
+            End If
+
+            Dim admin As String = User.Identity.Name
+            If Not PuedeSuplantar(admin) Then
+                Return Content(HttpStatusCode.Forbidden, New With {.mensaje = "No tiene permiso para entrar como otro usuario."})
+            End If
+            If String.Equals(request.UserName.Trim(), admin, StringComparison.OrdinalIgnoreCase) Then
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = "No puede entrar como su propio usuario."})
+            End If
+
+            Dim usuario = Membership.GetUser(request.UserName.Trim())
+            If usuario Is Nothing Then
+                Return Content(HttpStatusCode.NotFound, New With {.mensaje = "El usuario no existe."})
+            End If
+            If Not usuario.IsApproved OrElse usuario.IsLockedOut Then
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = "El usuario " & usuario.UserName & " está deshabilitado o bloqueado."})
+            End If
+            If Roles.IsUserInRole(usuario.UserName, Aplicacion.Grupos.Administrador) Then
+                Return Content(HttpStatusCode.Forbidden, New With {.mensaje = "No se puede entrar como otro administrador."})
+            End If
+
+            Return Ok(New With {
+                .token = GenerarTokenJWT(usuario.UserName, admin, HorasSuplantacion),
+                .username = usuario.UserName
+            })
+        End Function
+
+        ' appSettings "UsuariosSuplantacion": administradores habilitados, separados por coma.
+        ' Vacío o ausente = cualquier administrador.
+        Private Shared Function PuedeSuplantar(userName As String) As Boolean
+            Dim lista As String = ConfigurationManager.AppSettings("UsuariosSuplantacion")
+            If String.IsNullOrWhiteSpace(lista) Then Return True
+            Return lista.Split(","c).Any(Function(u) String.Equals(u.Trim(), userName, StringComparison.OrdinalIgnoreCase))
+        End Function
+
         <HttpPost>
         <JwtAuthorize>
         <Route("api/auth/refresh")>
@@ -120,7 +163,11 @@ Namespace Auth
             End Select
         End Function
 
-        Private Function GenerarTokenJWT(username As String) As String
+        ' el frontend vuelve solo a la cuenta del administrador al mismo plazo
+        Private Const HorasSuplantacion As Integer = 6
+
+        ' actor: administrador que entra como `username` (claim "act"); horas: vigencia del token
+        Private Function GenerarTokenJWT(username As String, Optional actor As String = Nothing, Optional horas As Integer = 8) As String
             ' 1. Leer valores desde appSettings en web.config
             Dim secretKey As String = ConfigurationManager.AppSettings("JwtSecretKey")
             Dim issuer As String = ConfigurationManager.AppSettings("JwtIssuer")
@@ -143,6 +190,10 @@ Namespace Auth
         New Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
     }
 
+            If Not String.IsNullOrEmpty(actor) Then
+                claims.Add(New Claim("act", actor))
+            End If
+
             If Roles.Enabled Then
                 Dim userRoles = Roles.GetRolesForUser(username)
                 For Each userRole In userRoles
@@ -153,7 +204,7 @@ Namespace Auth
             ' 4. Crear el descriptor del Token con los datos del web.config
             Dim tokenDescriptor As New SecurityTokenDescriptor With {
         .Subject = New ClaimsIdentity(claims),
-        .Expires = DateTime.UtcNow.AddHours(8),
+        .Expires = DateTime.UtcNow.AddHours(horas),
         .SigningCredentials = signingCredentials,
         .Issuer = issuer,
         .Audience = audience

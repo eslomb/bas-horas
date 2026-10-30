@@ -1,4 +1,4 @@
-Imports DTOs.Reportes
+﻿Imports DTOs.Reportes
 
 Namespace Services.Interfaces
     Public Interface IReporteRegistrosService

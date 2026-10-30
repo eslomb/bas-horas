@@ -1,4 +1,4 @@
-Imports System.Security.Cryptography
+﻿Imports System.Security.Cryptography
 
 Namespace Utils
     ' Genera passwords aleatorias usando un generador criptográficamente seguro

@@ -394,7 +394,9 @@ Namespace Services
                 .Centro = perfil.Centro,
                 .CUIL = perfil.CUIL,
                 .Dependencia = perfil.Dependencia,
-                .Roles = roles.ToList()
+                .Roles = roles.ToList(),
+                .PuedeGestionarRemuneraciones = AccesoRemuneraciones.PuedeGestionarRemuneraciones(
+                    usuario.UserName, roles.Contains(Aplicacion.Grupos.Administrador, StringComparer.OrdinalIgnoreCase))
             }
         End Function
     End Class

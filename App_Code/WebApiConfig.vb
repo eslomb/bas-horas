@@ -5,7 +5,7 @@ Public Module WebApiConfig
     Public Sub Register(config As HttpConfiguration)
         ' CORS: debe ir ANTES de MapHttpAttributeRoutes para que la política global
         ' combine bien con las rutas por atributo.
-        Dim corsPolicy = New EnableCorsAttribute("http://localhost:3000", "*", "*")
+        Dim corsPolicy = New EnableCorsAttribute("http://localhost:3000,http://bashoras.local", "*", "*")
         ' Content-Disposition lo necesita el frontend para leer el nombre del .xlsx descargado.
         corsPolicy.ExposedHeaders.Add("Content-Disposition")
         config.EnableCors(corsPolicy)

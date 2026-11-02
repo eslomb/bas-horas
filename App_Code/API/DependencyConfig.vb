@@ -39,6 +39,7 @@ Public Module DependencyConfig
         builder.RegisterType(Of ActividadService)().As(Of IActividadService)().InstancePerRequest()
         builder.RegisterType(Of PaisService)().As(Of IPaisService)().InstancePerRequest()
         builder.RegisterType(Of RegistroService)().As(Of IRegistroService)().InstancePerRequest()
+        builder.RegisterType(Of RemuneracionService)().As(Of IRemuneracionService)().InstancePerRequest()
         builder.RegisterType(Of ReporteRegistrosService)().As(Of IReporteRegistrosService)().InstancePerRequest()
         builder.RegisterType(Of ReporteGuardadoService)().As(Of IReporteGuardadoService)().InstancePerRequest()
         builder.RegisterType(Of UsuarioService)().As(Of IUsuarioService)().InstancePerRequest()

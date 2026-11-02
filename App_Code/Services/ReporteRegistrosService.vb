@@ -10,12 +10,9 @@ Namespace Services
     '      Basico        -> solo los propios (DeUsuario del reporte se ignora).
     '      Avanzado      -> los propios y los de usuarios Basicos (403 si DeUsuario es otro usuario).
     '      Administrador -> todos (o solo DeUsuario si el reporte lo define).
-    '  - Qué campos ve (nivel): Basico < Avanzado (Avanzado/Administrador) < Full (usuarios de UsuariosNivelFull).
+    '  - Qué campos ve (nivel): Basico < Avanzado (Avanzado/Administrador) < Full (usuarios de Utils.AccesoRemuneraciones).
     Public Class ReporteRegistrosService
         Implements IReporteRegistrosService
-
-        ' Prefijos de usuario (sin distinguir mayúsculas) con nivel Full. Mismo criterio que habilitarRemuneraciones de app/.
-        Private Shared ReadOnly UsuariosNivelFull As String() = {"ROCCHI", "CARRACEDO"}
 
         ' Orden de las primeras columnas del Excel (el resto sigue el orden de los DTOs). Basico no tiene Usuario/Legajo/CUIL y se saltean.
         Private Shared ReadOnly ColumnasExcelPrimero As String() = {"FechaActividad", "Usuario", "Legajo", "CUIL", "Jornada"}
@@ -158,7 +155,7 @@ Namespace Services
         End Function
 
         Private Shared Function DeterminarNivel(usuario As String, esAvanzadoOAdmin As Boolean) As NivelDetalleReporte
-            If UsuariosNivelFull.Any(Function(p) usuario.StartsWith(p, StringComparison.OrdinalIgnoreCase)) Then Return NivelDetalleReporte.Full
+            If AccesoRemuneraciones.EsNivelFull(usuario) Then Return NivelDetalleReporte.Full
             If esAvanzadoOAdmin Then Return NivelDetalleReporte.Avanzado
             Return NivelDetalleReporte.Basico
         End Function

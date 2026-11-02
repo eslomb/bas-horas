@@ -1,0 +1,1 @@
+function e(e){let t=e?.data;return(typeof t==`string`?t.trimStart().startsWith(`<`)?``:t:t?.Message||t?.mensaje)||[e?.statusCode,e?.message].filter(Boolean).join(` - `)}export{e as t};

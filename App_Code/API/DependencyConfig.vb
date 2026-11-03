@@ -30,6 +30,7 @@ Public Module DependencyConfig
         builder.RegisterType(Of UsuarioRepository)().As(Of IUsuarioRepository)().InstancePerRequest()
         builder.RegisterType(Of NotificadorUsuarios)().As(Of INotificadorUsuarios)().InstancePerRequest()
         builder.RegisterType(Of FeedbackRepository)().As(Of IFeedbackRepository)().InstancePerRequest()
+        builder.RegisterType(Of AnalisisRepository)().As(Of IAnalisisRepository)().InstancePerRequest()
 
         builder.RegisterType(Of CentroService)().As(Of ICentroService)().InstancePerRequest()
         builder.RegisterType(Of ConfiguracionService)().As(Of IConfiguracionService)().InstancePerRequest()
@@ -44,6 +45,7 @@ Public Module DependencyConfig
         builder.RegisterType(Of ReporteGuardadoService)().As(Of IReporteGuardadoService)().InstancePerRequest()
         builder.RegisterType(Of UsuarioService)().As(Of IUsuarioService)().InstancePerRequest()
         builder.RegisterType(Of FeedbackService)().As(Of IFeedbackService)().InstancePerRequest()
+        builder.RegisterType(Of AnalisisService)().As(Of IAnalisisService)().InstancePerRequest()
 
         Dim container = builder.Build()
         config.DependencyResolver = New AutofacWebApiDependencyResolver(container)

@@ -36,6 +36,7 @@ Partial Public Class BASHorasEntities
     Public Overridable Property REMUNERACIONES() As DbSet(Of REMUNERACIONES)
     Public Overridable Property DIAS_HABILES() As DbSet(Of DIAS_HABILES)
     Public Overridable Property FEEDBACK() As DbSet(Of FEEDBACK)
+    Public Overridable Property MONITOREO() As DbSet(Of MONITOREO)
 
     Public Overridable Function spFechasUltimasTareas(usuario As String, cant As Nullable(Of Integer)) As ObjectResult(Of String)
         Dim usuarioParameter As ObjectParameter = If(usuario IsNot Nothing, New ObjectParameter("usuario", usuario), New ObjectParameter("usuario", GetType(String)))

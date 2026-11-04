@@ -51,6 +51,13 @@ Partial Public Class FERIADOS
     Public Property Motivo As String
 
 End Class
+Partial Public Class MONITOREO
+    Public Property IDMonitoreo As Integer
+    Public Property Usuario As String
+    Public Property Fecha As Date
+    Public Property Url As String
+
+End Class
 Partial Public Class PAISES
     Public Property Codigo As String
     Public Property Pais As String
@@ -80,7 +87,6 @@ Partial Public Class REGISTROS
     Public Property Minutos As Integer
     Public Property CodPais As String
     Public Property Observaciones As String
-    Public Property ModtempDVY570 As Nullable(Of Integer)
 
     Public Overridable Property ACTIVIDADES As ACTIVIDADES
     Public Overridable Property PRODUCTOS As PRODUCTOS

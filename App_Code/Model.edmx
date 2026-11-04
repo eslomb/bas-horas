@@ -47,7 +47,7 @@
           <Property Name="Email" Type="nvarchar" MaxLength="256" />
           <Property Name="Comentario" Type="nvarchar" MaxLength="2000" Nullable="false" />
           <Property Name="Tipo" Type="varchar" MaxLength="20" Nullable="false" />
-          <Property Name="Fecha" Type="datetime" StoreGeneratedPattern="Computed" Nullable="false" />
+          <Property Name="Fecha" Type="datetime" Nullable="false" StoreGeneratedPattern="Computed" />
         </EntityType>
         <EntityType Name="FERIADOS">
           <Key>
@@ -55,6 +55,15 @@
           </Key>
           <Property Name="Feriado" Type="date" Nullable="false" />
           <Property Name="Motivo" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="MONITOREO">
+          <Key>
+            <PropertyRef Name="IDMonitoreo" />
+          </Key>
+          <Property Name="IDMonitoreo" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Usuario" Type="nvarchar" MaxLength="256" Nullable="false" />
+          <Property Name="Fecha" Type="datetime" Nullable="false" StoreGeneratedPattern="Computed" />
+          <Property Name="Url" Type="nvarchar" MaxLength="2000" Nullable="false" />
         </EntityType>
         <EntityType Name="PAISES">
           <Key>
@@ -88,7 +97,6 @@
           <Property Name="Minutos" Type="int" Nullable="false" />
           <Property Name="CodPais" Type="nchar" MaxLength="2" />
           <Property Name="Observaciones" Type="nvarchar" MaxLength="400" />
-          <Property Name="ModtempDVY570" Type="int" />
         </EntityType>
         <EntityType Name="REMUNERACIONES">
           <Key>
@@ -141,7 +149,8 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Name="Horas" Type="int" Nullable="false" />
           <Property Name="Minutos" Type="int" Nullable="false" />
           <Property Name="CodPais" Type="nchar" MaxLength="2" />
-          <Property Name="Observaciones" Type="nchar" MaxLength="10" />
+          <Property Name="Observaciones" Type="nvarchar" MaxLength="400" />
+          <Property Name="ModtempDVY570" Type="int" />
           <Property Name="Codigo" Type="varchar" MaxLength="10" Nullable="false" />
           <Property Name="Actividad" Type="nvarchar" MaxLength="400" Nullable="false" />
           <Property Name="Pais" Type="nvarchar" MaxLength="50" Nullable="false" />
@@ -208,6 +217,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySet Name="DIAS_HABILES" EntityType="Self.DIAS_HABILES" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="FEEDBACK" EntityType="Self.FEEDBACK" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="FERIADOS" EntityType="Self.FERIADOS" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="MONITOREO" EntityType="Self.MONITOREO" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PAISES" EntityType="Self.PAISES" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PRODUCTOS" EntityType="Self.PRODUCTOS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="REGISTROS" EntityType="Self.REGISTROS" Schema="dbo" store:Type="Tables" />
@@ -224,6 +234,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
     [vRegistros].[Minutos] AS [Minutos], 
     [vRegistros].[CodPais] AS [CodPais], 
     [vRegistros].[Observaciones] AS [Observaciones], 
+    [vRegistros].[ModtempDVY570] AS [ModtempDVY570], 
     [vRegistros].[Codigo] AS [Codigo], 
     [vRegistros].[Actividad] AS [Actividad], 
     [vRegistros].[Pais] AS [Pais], 
@@ -290,6 +301,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
             <Parameter Name="IdAct" Mode="In" Type="Int32" />
             <Parameter Name="CodPais" Mode="In" Type="String" />
           </FunctionImport>
+          <EntitySet Name="MONITOREO" EntityType="BASHorasModel.MONITOREO" />
         </EntityContainer>
         <EntityType Name="PAISES">
           <Key>
@@ -338,7 +350,6 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <NavigationProperty Name="ACTIVIDADES" Relationship="BASHorasModel.FK_REGISTROS_ACTIVIDADES" FromRole="REGISTROS" ToRole="ACTIVIDADES" />
           <NavigationProperty Name="PRODUCTOS" Relationship="BASHorasModel.FK_REGISTROS_PRODUCTOS" FromRole="REGISTROS" ToRole="PRODUCTOS" />
           <NavigationProperty Name="PAISES" Relationship="BASHorasModel.FK_REGISTROS_PAISES" FromRole="REGISTROS" ToRole="PAISES" />
-          <Property Name="ModtempDVY570" Type="Int32" />
         </EntityType>
         <Association Name="FK_REGISTROS_ACTIVIDADES">
           <End Type="BASHorasModel.ACTIVIDADES" Role="ACTIVIDADES" Multiplicity="1" />
@@ -388,7 +399,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Name="Horas" Type="Int32" Nullable="false" />
           <Property Name="Minutos" Type="Int32" Nullable="false" />
           <Property Name="CodPais" Type="String" MaxLength="2" FixedLength="true" Unicode="true" />
-          <Property Name="Observaciones" Type="String" MaxLength="10" FixedLength="true" Unicode="true" />
+          <Property Name="Observaciones" Type="String" MaxLength="400" FixedLength="false" Unicode="true" />
           <Property Name="Codigo" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
           <Property Name="Actividad" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
           <Property Name="Pais" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
@@ -487,6 +498,15 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Type="Decimal" Name="REMUNERACION" Nullable="true" Precision="18" Scale="2" />
           <Property Type="Int32" Name="CUIL" Nullable="true" />
         </ComplexType>
+        <EntityType Name="MONITOREO">
+          <Key>
+            <PropertyRef Name="IDMonitoreo" />
+          </Key>
+          <Property Name="IDMonitoreo" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" annotation:StoreGeneratedPattern="Computed" />
+          <Property Name="Url" Type="String" Nullable="false" MaxLength="2000" FixedLength="false" Unicode="true" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -527,7 +547,6 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySetMapping Name="REGISTROS">
             <EntityTypeMapping TypeName="BASHorasModel.REGISTROS">
               <MappingFragment StoreEntitySet="REGISTROS">
-                <ScalarProperty Name="ModtempDVY570" ColumnName="ModtempDVY570" />
                 <ScalarProperty Name="Observaciones" ColumnName="Observaciones" />
                 <ScalarProperty Name="CodPais" ColumnName="CodPais" />
                 <ScalarProperty Name="Minutos" ColumnName="Minutos" />
@@ -668,6 +687,16 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>
+          <EntitySetMapping Name="MONITOREO">
+            <EntityTypeMapping TypeName="BASHorasModel.MONITOREO">
+              <MappingFragment StoreEntitySet="MONITOREO">
+                <ScalarProperty Name="Url" ColumnName="Url" />
+                <ScalarProperty Name="Fecha" ColumnName="Fecha" />
+                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
+                <ScalarProperty Name="IDMonitoreo" ColumnName="IDMonitoreo" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>

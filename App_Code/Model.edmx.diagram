@@ -12,7 +12,6 @@
         <AssociationConnector Association="BASHorasModel.FK_REGISTROS_ACTIVIDADES" />
         <AssociationConnector Association="BASHorasModel.FK_REGISTROS_PRODUCTOS" />
         <AssociationConnector Association="BASHorasModel.FK_REGISTROS_PAISES" />
-        <EntityTypeShape EntityType="BASHorasModel.vRegistros" Width="1.5" PointX="10.125" PointY="4" />
         <EntityTypeShape EntityType="BASHorasModel.CONFIGURACIONES" Width="1.5" PointX="0.75" PointY="0.75" />
         <EntityTypeShape EntityType="BASHorasModel.CENTROS" Width="1.5" PointX="0.75" PointY="2.75" />
         <EntityTypeShape EntityType="BASHorasModel.REPORTES" Width="1.5" PointX="0.75" PointY="4.75" />
@@ -21,6 +20,7 @@
         <EntityTypeShape EntityType="BASHorasModel.DIAS_HABILES" Width="1.5" PointX="3" PointY="0.75" />
         <EntityTypeShape EntityType="BASHorasModel.FEEDBACK" Width="1.5" PointX="12.625" PointY="3.75" />
         <EntityTypeShape EntityType="BASHorasModel.MONITOREO" Width="1.5" PointX="12.625" PointY="6.25" />
+        <EntityTypeShape EntityType="BASHorasModel.vRegistros" Width="1.5" PointX="10.125" PointY="3.75" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

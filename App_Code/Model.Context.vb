@@ -28,7 +28,6 @@ Partial Public Class BASHorasEntities
     Public Overridable Property ACTIVIDADES() As DbSet(Of ACTIVIDADES)
     Public Overridable Property PRODUCTOS() As DbSet(Of PRODUCTOS)
     Public Overridable Property REGISTROS() As DbSet(Of REGISTROS)
-    Public Overridable Property vRegistros() As DbSet(Of vRegistros)
     Public Overridable Property CONFIGURACIONES() As DbSet(Of CONFIGURACIONES)
     Public Overridable Property CENTROS() As DbSet(Of CENTROS)
     Public Overridable Property REPORTES() As DbSet(Of REPORTES)
@@ -37,6 +36,7 @@ Partial Public Class BASHorasEntities
     Public Overridable Property DIAS_HABILES() As DbSet(Of DIAS_HABILES)
     Public Overridable Property FEEDBACK() As DbSet(Of FEEDBACK)
     Public Overridable Property MONITOREO() As DbSet(Of MONITOREO)
+    Public Overridable Property vRegistros() As DbSet(Of vRegistros)
 
     Public Overridable Function spFechasUltimasTareas(usuario As String, cant As Nullable(Of Integer)) As ObjectResult(Of String)
         Dim usuarioParameter As ObjectParameter = If(usuario IsNot Nothing, New ObjectParameter("usuario", usuario), New ObjectParameter("usuario", GetType(String)))

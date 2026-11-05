@@ -129,17 +129,17 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
         <EntityType Name="vRegistros">
           <Key>
             <PropertyRef Name="IDReg" />
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            <PropertyRef Name="idProducto" />
+            <PropertyRef Name="idActividad" />
+            <PropertyRef Name="Usuario" />
+            <PropertyRef Name="Fecha" />
+            <PropertyRef Name="Horas" />
+            <PropertyRef Name="Minutos" />
+            <PropertyRef Name="CodActividad" />
+            <PropertyRef Name="Actividad" />
+            <PropertyRef Name="Pais" />
+            <PropertyRef Name="CodProducto" />
+            <PropertyRef Name="Producto" />
           </Key>
           <Property Name="IDReg" Type="int" Nullable="false" />
           <Property Name="idProducto" Type="int" Nullable="false" />
@@ -150,8 +150,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Name="Minutos" Type="int" Nullable="false" />
           <Property Name="CodPais" Type="nchar" MaxLength="2" />
           <Property Name="Observaciones" Type="nvarchar" MaxLength="400" />
-          <Property Name="ModtempDVY570" Type="int" />
-          <Property Name="Codigo" Type="varchar" MaxLength="10" Nullable="false" />
+          <Property Name="CodActividad" Type="varchar" MaxLength="10" Nullable="false" />
           <Property Name="Actividad" Type="nvarchar" MaxLength="400" Nullable="false" />
           <Property Name="Pais" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="CodProducto" Type="varchar" MaxLength="10" Nullable="false" />
@@ -234,8 +233,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
     [vRegistros].[Minutos] AS [Minutos], 
     [vRegistros].[CodPais] AS [CodPais], 
     [vRegistros].[Observaciones] AS [Observaciones], 
-    [vRegistros].[ModtempDVY570] AS [ModtempDVY570], 
-    [vRegistros].[Codigo] AS [Codigo], 
+    [vRegistros].[CodActividad] AS [CodActividad], 
     [vRegistros].[Actividad] AS [Actividad], 
     [vRegistros].[Pais] AS [Pais], 
     [vRegistros].[CodProducto] AS [CodProducto], 
@@ -276,7 +274,6 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
             <End Role="PAISES" EntitySet="PAISES" />
             <End Role="REGISTROS" EntitySet="REGISTROS" />
           </AssociationSet>
-          <EntitySet Name="vRegistros" EntityType="BASHorasModel.vRegistros" />
           <EntitySet Name="CONFIGURACIONES" EntityType="BASHorasModel.CONFIGURACIONES" />
           <FunctionImport Name="spFechasUltimasTareas" ReturnType="Collection(String)">
             <Parameter Name="usuario" Mode="In" Type="String" />
@@ -302,6 +299,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
             <Parameter Name="CodPais" Mode="In" Type="String" />
           </FunctionImport>
           <EntitySet Name="MONITOREO" EntityType="BASHorasModel.MONITOREO" />
+          <EntitySet Name="vRegistros" EntityType="BASHorasModel.vRegistros" />
         </EntityContainer>
         <EntityType Name="PAISES">
           <Key>
@@ -387,25 +385,6 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <EntityType Name="vRegistros">
-          <Key>
-            <PropertyRef Name="IDReg" />
-          </Key>
-          <Property Name="IDReg" Type="Int32" Nullable="false" />
-          <Property Name="idProducto" Type="Int32" Nullable="false" />
-          <Property Name="idActividad" Type="Int32" Nullable="false" />
-          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
-          <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" />
-          <Property Name="Horas" Type="Int32" Nullable="false" />
-          <Property Name="Minutos" Type="Int32" Nullable="false" />
-          <Property Name="CodPais" Type="String" MaxLength="2" FixedLength="true" Unicode="true" />
-          <Property Name="Observaciones" Type="String" MaxLength="400" FixedLength="false" Unicode="true" />
-          <Property Name="Codigo" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
-          <Property Name="Actividad" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
-          <Property Name="Pais" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="CodProducto" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
-          <Property Name="Producto" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
-        </EntityType>
         <EntityType Name="CONFIGURACIONES">
           <Key>
             <PropertyRef Name="CodConfig" />
@@ -507,6 +486,36 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" annotation:StoreGeneratedPattern="Computed" />
           <Property Name="Url" Type="String" Nullable="false" MaxLength="2000" FixedLength="false" Unicode="true" />
         </EntityType>
+        <EntityType Name="vRegistros">
+          <Key>
+            <PropertyRef Name="IDReg" />
+            <PropertyRef Name="idProducto" />
+            <PropertyRef Name="idActividad" />
+            <PropertyRef Name="Usuario" />
+            <PropertyRef Name="Fecha" />
+            <PropertyRef Name="Horas" />
+            <PropertyRef Name="Minutos" />
+            <PropertyRef Name="CodActividad" />
+            <PropertyRef Name="Actividad" />
+            <PropertyRef Name="Pais" />
+            <PropertyRef Name="CodProducto" />
+            <PropertyRef Name="Producto" />
+          </Key>
+          <Property Name="IDReg" Type="Int32" Nullable="false" />
+          <Property Name="idProducto" Type="Int32" Nullable="false" />
+          <Property Name="idActividad" Type="Int32" Nullable="false" />
+          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Horas" Type="Int32" Nullable="false" />
+          <Property Name="Minutos" Type="Int32" Nullable="false" />
+          <Property Name="CodPais" Type="String" MaxLength="2" FixedLength="true" Unicode="true" />
+          <Property Name="Observaciones" Type="String" MaxLength="400" FixedLength="false" Unicode="true" />
+          <Property Name="CodActividad" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
+          <Property Name="Actividad" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
+          <Property Name="Pais" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="CodProducto" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
+          <Property Name="Producto" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -547,26 +556,6 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySetMapping Name="REGISTROS">
             <EntityTypeMapping TypeName="BASHorasModel.REGISTROS">
               <MappingFragment StoreEntitySet="REGISTROS">
-                <ScalarProperty Name="Observaciones" ColumnName="Observaciones" />
-                <ScalarProperty Name="CodPais" ColumnName="CodPais" />
-                <ScalarProperty Name="Minutos" ColumnName="Minutos" />
-                <ScalarProperty Name="Horas" ColumnName="Horas" />
-                <ScalarProperty Name="Fecha" ColumnName="Fecha" />
-                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
-                <ScalarProperty Name="idActividad" ColumnName="idActividad" />
-                <ScalarProperty Name="idProducto" ColumnName="idProducto" />
-                <ScalarProperty Name="IDReg" ColumnName="IDReg" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="vRegistros">
-            <EntityTypeMapping TypeName="BASHorasModel.vRegistros">
-              <MappingFragment StoreEntitySet="vRegistros">
-                <ScalarProperty Name="Producto" ColumnName="Producto" />
-                <ScalarProperty Name="CodProducto" ColumnName="CodProducto" />
-                <ScalarProperty Name="Pais" ColumnName="Pais" />
-                <ScalarProperty Name="Actividad" ColumnName="Actividad" />
-                <ScalarProperty Name="Codigo" ColumnName="Codigo" />
                 <ScalarProperty Name="Observaciones" ColumnName="Observaciones" />
                 <ScalarProperty Name="CodPais" ColumnName="CodPais" />
                 <ScalarProperty Name="Minutos" ColumnName="Minutos" />
@@ -694,6 +683,26 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
                 <ScalarProperty Name="Fecha" ColumnName="Fecha" />
                 <ScalarProperty Name="Usuario" ColumnName="Usuario" />
                 <ScalarProperty Name="IDMonitoreo" ColumnName="IDMonitoreo" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="vRegistros">
+            <EntityTypeMapping TypeName="BASHorasModel.vRegistros">
+              <MappingFragment StoreEntitySet="vRegistros">
+                <ScalarProperty Name="Producto" ColumnName="Producto" />
+                <ScalarProperty Name="CodProducto" ColumnName="CodProducto" />
+                <ScalarProperty Name="Pais" ColumnName="Pais" />
+                <ScalarProperty Name="Actividad" ColumnName="Actividad" />
+                <ScalarProperty Name="CodActividad" ColumnName="CodActividad" />
+                <ScalarProperty Name="Observaciones" ColumnName="Observaciones" />
+                <ScalarProperty Name="CodPais" ColumnName="CodPais" />
+                <ScalarProperty Name="Minutos" ColumnName="Minutos" />
+                <ScalarProperty Name="Horas" ColumnName="Horas" />
+                <ScalarProperty Name="Fecha" ColumnName="Fecha" />
+                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
+                <ScalarProperty Name="idActividad" ColumnName="idActividad" />
+                <ScalarProperty Name="idProducto" ColumnName="idProducto" />
+                <ScalarProperty Name="IDReg" ColumnName="IDReg" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

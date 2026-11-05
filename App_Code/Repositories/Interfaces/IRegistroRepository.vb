@@ -6,6 +6,7 @@ Namespace Repositories.Interfaces
         Function ObtenerVistaPorId(idRegistro As Integer) As vRegistros
         Function ObtenerEntidadPorId(idRegistro As Integer) As REGISTROS
         Function Existe(registro As REGISTROS) As Boolean
+        Function MinutosDelDia(usuario As String, fecha As Date, excluirIdReg As Integer) As Integer
         Sub Agregar(registro As REGISTROS)
         Sub Actualizar(registro As REGISTROS)
         Sub Eliminar(idRegistro As Integer)

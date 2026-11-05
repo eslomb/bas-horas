@@ -176,6 +176,13 @@ Namespace Services
 
         Private Const MensajeCargaDeshabilitada As String = "Disculpas, en este momento no está habilitada la carga de tareas."
 
+        ' Tope de una tarea y de la suma de tareas de un usuario en un día (12 h). El frontend usa el mismo valor (MAX_HORAS_DIA).
+        Private Const MaxMinutosDia As Integer = 12 * 60
+
+        Private Shared Function FormatoTiempo(minutos As Integer) As String
+            Return String.Format("{0}:{1:00}", minutos \ 60, minutos Mod 60)
+        End Function
+
         Private Shared Function Invalido(mensaje As String) As ResultadoRegistro
             Return New ResultadoRegistro With {.Estado = ResultadoOperacion.Invalido, .Mensaje = mensaje}
         End Function
@@ -191,7 +198,7 @@ Namespace Services
         End Function
 
         ' Devuelve Nothing si el registro es válido; si no, el resultado de error a devolver.
-        ' Orden del legacy: 1, 8, 7, 2, 3, 4, 5, 6.
+        ' Orden del legacy: 1, 8, 7, 2, 3, 4, 5, 6. La 9 (tope de 12 h por tarea y por día) es propia de la API y va después de la 8.
         Private Function Validar(r As REGISTROS, esAdministrador As Boolean) As ResultadoRegistro
             Dim hoy = Date.Today
             Dim fecha = r.Fecha.Date
@@ -205,6 +212,18 @@ Namespace Services
             If r.Horas < 0 OrElse r.Horas > 12 OrElse r.Minutos < 0 OrElse r.Minutos > 59 OrElse
                (r.Horas = 0 AndAlso r.Minutos = 0) OrElse producto Is Nothing OrElse actividad Is Nothing Then
                 Return Invalido("No se puede ingresar una tarea sin definir su duración.")
+            End If
+
+            ' 9. Máximo de 12 h por tarea y por día (también para Administrador)
+            Dim minutos = r.Horas * 60 + r.Minutos
+            If minutos > MaxMinutosDia Then
+                Return Invalido("La duración máxima de una tarea es de 12 horas.")
+            End If
+            Dim cargadosEnElDia = repo.MinutosDelDia(r.Usuario, fecha, r.IDReg)
+            If cargadosEnElDia + minutos > MaxMinutosDia Then
+                Dim libres = Math.Max(0, MaxMinutosDia - cargadosEnElDia)
+                Return Invalido(String.Format("Se superan las 12 horas del día {0}: ya hay {1} cargadas, quedan {2}.",
+                                              fecha.ToString("dd/MM/yyyy"), FormatoTiempo(cargadosEnElDia), FormatoTiempo(libres)))
             End If
 
             ' 7. Duplicado
@@ -297,7 +316,7 @@ Namespace Services
                 .CodProducto = v.CodProducto,
                 .Producto = v.Producto,
                 .IdActividad = v.idActividad,
-                .CodActividad = v.Codigo,
+                .CodActividad = v.CodActividad,
                 .Actividad = v.Actividad,
                 .CodPais = v.CodPais,
                 .Pais = v.Pais,

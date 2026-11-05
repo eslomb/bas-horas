@@ -41,6 +41,17 @@ Namespace Repositories.EF
                                                     r.Observaciones = registro.Observaciones)
         End Function
 
+        Public Function MinutosDelDia(usuario As String, fecha As Date, excluirIdReg As Integer) As Integer Implements IRegistroRepository.MinutosDelDia
+            ' Total cargado por el usuario en el día, sin contar excluirIdReg (0 en un alta; en una edición, el propio registro).
+            ' Rango [día, día siguiente) por si alguna fecha vieja quedó guardada con hora.
+            Dim desde = fecha.Date
+            Dim hasta = desde.AddDays(1)
+            Dim total = cntx.REGISTROS.
+                Where(Function(r) r.Usuario = usuario AndAlso r.Fecha >= desde AndAlso r.Fecha < hasta AndAlso r.IDReg <> excluirIdReg).
+                Sum(Function(r) CType(r.Horas * 60 + r.Minutos, Integer?))
+            Return If(total, 0)
+        End Function
+
         Public Sub Agregar(registro As REGISTROS) Implements IRegistroRepository.Agregar
             cntx.REGISTROS.Add(registro)
             cntx.SaveChanges()

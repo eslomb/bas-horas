@@ -35,7 +35,7 @@ Public Class MonitoreoController
         End Select
     End Function
 
-    ' Cantidad de visitas por usuario, URL y día. Fechas yyyy-MM-dd, ambas opcionales e inclusive.
+    ' Cantidad de visitas por usuario, URL y día. Fechas yyyy-MM-dd, inclusive. Por defecto: hasta = hoy, desde = 7 días antes de hasta.
     <HttpGet>
     <JwtAuthorize(Roles:="Administrador")>
     <Route("api/monitoreo")>

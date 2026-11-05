@@ -11,6 +11,9 @@ Namespace Services
         ' Mismo largo que MONITOREO.Url.
         Private Const LongitudMaximaUrl As Integer = 2000
 
+        ' Ventana por defecto de ObtenerVisitas cuando no se indica "desde".
+        Private Const DiasPorDefecto As Integer = 7
+
         Private ReadOnly repo As IMonitoreoRepository
 
         Public Sub New(repo As IMonitoreoRepository)
@@ -31,21 +34,19 @@ Namespace Services
             Return New ResultadoMonitoreo With {.Estado = ResultadoOperacionMonitoreo.Ok}
         End Function
 
-        ' Visitas por usuario, URL y día. Desde/hasta son fechas inclusive y opcionales.
+        ' Visitas por usuario, URL y día. Desde/hasta son fechas inclusive.
+        ' Por defecto: hasta = hoy y desde = 7 días antes de hasta.
         Public Function ObtenerVisitas(desde As Date?, hasta As Date?) As ResultadoMonitoreo Implements IMonitoreoService.ObtenerVisitas
-            If desde.HasValue AndAlso hasta.HasValue AndAlso desde.Value.Date > hasta.Value.Date Then
+            Dim fechaHasta = If(hasta, Date.Today).Date
+            Dim fechaDesde = If(desde, fechaHasta.AddDays(-DiasPorDefecto)).Date
+
+            If fechaDesde > fechaHasta Then
                 Return Invalido("La fecha 'desde' no puede ser posterior a 'hasta'.")
             End If
 
-            Dim consulta = repo.ObtenerTodos()
-            If desde.HasValue Then
-                Dim d = desde.Value.Date
-                consulta = consulta.Where(Function(m) m.Fecha >= d)
-            End If
-            If hasta.HasValue Then
-                Dim limite = hasta.Value.Date.AddDays(1)
-                consulta = consulta.Where(Function(m) m.Fecha < limite)
-            End If
+            Dim limite = fechaHasta.AddDays(1)
+            Dim consulta = repo.ObtenerTodos().
+                Where(Function(m) m.Fecha >= fechaDesde AndAlso m.Fecha < limite)
 
             ' TruncateTime (EF6) se resuelve en SQL; en EF Core sería m.Fecha.Date.
             Dim filas = consulta.

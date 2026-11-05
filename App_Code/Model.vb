@@ -125,7 +125,7 @@ Partial Public Class vRegistros
     Public Property Minutos As Integer
     Public Property CodPais As String
     Public Property Observaciones As String
-    Public Property Codigo As String
+    Public Property CodActividad As String
     Public Property Actividad As String
     Public Property Pais As String
     Public Property CodProducto As String

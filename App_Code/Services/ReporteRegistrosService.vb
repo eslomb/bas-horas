@@ -6,10 +6,10 @@ Imports Utils
 
 Namespace Services
     ' Registros de un reporte guardado (spReporteGeneral con los filtros del reporte), según quién los pide:
-    '  - Qué registros ve (rol):
-    '      Basico        -> solo los propios (DeUsuario del reporte se ignora).
-    '      Avanzado      -> los propios y los de usuarios Basicos (403 si DeUsuario es otro usuario).
-    '      Administrador -> todos (o solo DeUsuario si el reporte lo define).
+    '  - Qué registros ve (rol, ver ReporteAlcanceService):
+    '      Basico        -> solo los propios (DeUsuario y DeCentro del reporte se ignoran).
+    '      Avanzado      -> los propios y los de usuarios Basico de su Centro (403 si DeUsuario está fuera; DeCentro se ignora).
+    '      Administrador -> todos (o solo DeUsuario si el reporte lo define), filtrado por DeCentro si lo tiene.
     '  - Qué campos ve (nivel): Basico < Avanzado (Avanzado/Administrador) < Full (usuarios de Utils.AccesoRemuneraciones).
     Public Class ReporteRegistrosService
         Implements IReporteRegistrosService
@@ -22,17 +22,20 @@ Namespace Services
         Private ReadOnly usuarios As IUsuarioRepository
         Private ReadOnly remuneraciones As IRemuneracionRepository
         Private ReadOnly diasHabiles As IDiaHabilRepository
+        Private ReadOnly alcanceReportes As IReporteAlcanceService
 
         Public Sub New(reportes As IReporteGuardadoRepository,
                        reporteGeneral As IReporteGeneralRepository,
                        usuarios As IUsuarioRepository,
                        remuneraciones As IRemuneracionRepository,
-                       diasHabiles As IDiaHabilRepository)
+                       diasHabiles As IDiaHabilRepository,
+                       alcanceReportes As IReporteAlcanceService)
             Me.reportes = reportes
             Me.reporteGeneral = reporteGeneral
             Me.usuarios = usuarios
             Me.remuneraciones = remuneraciones
             Me.diasHabiles = diasHabiles
+            Me.alcanceReportes = alcanceReportes
         End Sub
 
         ' Resultado de Preparar: filas ya filtradas por rol y centro, listas para paginar/mapear.
@@ -103,24 +106,18 @@ Namespace Services
                 Return New ResultadoReporte With {.Estado = ResultadoOperacionReporte.Prohibido}
             End If
 
-            Dim roles = usuarios.ObtenerRoles(usuario)
-            Dim esAdministrador = roles.Contains(Aplicacion.Grupos.Administrador, StringComparer.OrdinalIgnoreCase)
-            Dim esAvanzado = roles.Contains(Aplicacion.Grupos.Avanzado, StringComparer.OrdinalIgnoreCase)
+            Dim alcance = alcanceReportes.ObtenerAlcance(usuario)
 
-            ' Usuario que se le pasa al SP (Nothing = todos) y, para Avanzado, a quiénes puede ver.
+            ' Usuario que se le pasa al SP (Nothing = todos).
             Dim usuarioSP As String
-            Dim visibles As HashSet(Of String) = Nothing
 
-            If esAdministrador Then
+            If alcance.EsAdministrador Then
                 usuarioSP = reporte.DeUsuario
-            ElseIf esAvanzado Then
-                visibles = New HashSet(Of String)(usuarios.ObtenerUsuariosEnRol(Aplicacion.Grupos.Basico), StringComparer.OrdinalIgnoreCase)
-                visibles.Add(usuario)
-
-                If reporte.DeUsuario IsNot Nothing AndAlso Not visibles.Contains(reporte.DeUsuario) Then
+            ElseIf alcance.EsAvanzado Then
+                If reporte.DeUsuario IsNot Nothing AndAlso Not alcance.Permite(reporte.DeUsuario) Then
                     Return New ResultadoReporte With {
                         .Estado = ResultadoOperacionReporte.Prohibido,
-                        .Mensaje = "Solo puede consultar sus propios registros y los de usuarios Basicos."
+                        .Mensaje = AlcanceReporte.MensajeFueraDeAlcance
                     }
                 End If
                 usuarioSP = reporte.DeUsuario
@@ -132,14 +129,16 @@ Namespace Services
             Dim filas = reporteGeneral.EjecutarReporteGeneral(reporte.Desde, reporte.Hasta, usuarioSP,
                                                               If(reporte.Producto_id, 0), If(reporte.Actividad_id, 0), reporte.CodPais)
 
-            If visibles IsNot Nothing Then
-                filas = filas.Where(Function(f) f.USUARIO IsNot Nothing AndAlso visibles.Contains(f.USUARIO)).ToList()
+            ' Avanzado: solo él y los Basico de su Centro (eso ya aplica su Centro). Basico: el SP ya filtró por él.
+            If Not alcance.EsAdministrador Then
+                filas = filas.Where(Function(f) alcance.Permite(f.USUARIO)).ToList()
             End If
 
             Dim perfiles As New Dictionary(Of String, ProfileCommon)(StringComparer.OrdinalIgnoreCase)
 
-            ' El filtro por Centro es el único que necesita el Profile de todos los usuarios, no solo los de la página.
-            If Not String.IsNullOrWhiteSpace(reporte.DeCentro) Then
+            ' DeCentro solo cuenta para el Administrador (a los demás se les ignora aunque el reporte guardado lo traiga).
+            ' Es el único filtro que necesita el Profile de todos los usuarios, no solo los de la página.
+            If alcance.EsAdministrador AndAlso Not String.IsNullOrWhiteSpace(reporte.DeCentro) Then
                 CargarPerfiles(perfiles, filas)
                 Dim centros As New HashSet(Of String)(reporte.DeCentro.Replace(" ", "").Split(","c), StringComparer.OrdinalIgnoreCase)
                 filas = filas.Where(Function(f) centros.Contains(CentroDe(f.USUARIO, perfiles))).ToList()
@@ -148,7 +147,7 @@ Namespace Services
             consulta = New Consulta With {
                 .Filas = filas,
                 .Perfiles = perfiles,
-                .Nivel = DeterminarNivel(usuario, esAdministrador OrElse esAvanzado),
+                .Nivel = DeterminarNivel(usuario, alcance.EsAdministrador OrElse alcance.EsAvanzado),
                 .Titulo = reporte.Titulo
             }
             Return Nothing

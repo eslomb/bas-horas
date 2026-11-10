@@ -1,4 +1,4 @@
-Imports System.Linq
+﻿Imports System.Linq
 Imports DTOs.Reportes
 Imports Repositories.Interfaces
 Imports Services.Interfaces
@@ -8,9 +8,11 @@ Namespace Services
         Implements IReporteGuardadoService
 
         Private ReadOnly repo As IReporteGuardadoRepository
+        Private ReadOnly alcanceReportes As IReporteAlcanceService
 
-        Public Sub New(repo As IReporteGuardadoRepository)
+        Public Sub New(repo As IReporteGuardadoRepository, alcanceReportes As IReporteAlcanceService)
             Me.repo = repo
+            Me.alcanceReportes = alcanceReportes
         End Sub
 
         Public Function Listar(usuario As String) As List(Of ReporteGuardadoDTO) Implements IReporteGuardadoService.Listar
@@ -45,6 +47,9 @@ Namespace Services
                 .DeCentro = NormalizarVacio(input.DeCentro)
             }
 
+            Dim rechazo = AplicarAlcance(usuario, entidad)
+            If rechazo IsNot Nothing Then Return rechazo
+
             Try
                 repo.Agregar(entidad)
             Catch
@@ -74,6 +79,10 @@ Namespace Services
             entidad.DeUsuario = NormalizarVacio(input.DeUsuario)
             entidad.DeCentro = NormalizarVacio(input.DeCentro)
 
+            ' Si se rechaza no se llama a Actualizar, así que los cambios en la entidad no se persisten.
+            Dim rechazo = AplicarAlcance(usuario, entidad)
+            If rechazo IsNot Nothing Then Return rechazo
+
             Try
                 repo.Actualizar(entidad)
             Catch
@@ -101,6 +110,32 @@ Namespace Services
             End Try
 
             Return New ResultadoReporte With {.Estado = ResultadoOperacionReporte.Ok}
+        End Function
+
+        ' DeUsuario/DeCentro según el rol de quien guarda (no se confía en lo que manda el frontend):
+        '   Administrador: se guardan tal cual.
+        '   Avanzado: DeCentro se descarta (siempre aplica su Centro); DeUsuario fuera de su alcance -> 403.
+        '   Basico: ambos se descartan (siempre ve solo lo propio).
+        ' Devuelve Nothing si se puede guardar; si no, el resultado de rechazo.
+        Private Function AplicarAlcance(usuario As String, entidad As REPORTES) As ResultadoReporte
+            Dim alcance = alcanceReportes.ObtenerAlcance(usuario)
+            If alcance.EsAdministrador Then Return Nothing
+
+            entidad.DeCentro = Nothing
+
+            If Not alcance.EsAvanzado Then
+                entidad.DeUsuario = Nothing
+                Return Nothing
+            End If
+
+            If entidad.DeUsuario IsNot Nothing AndAlso Not alcance.Permite(entidad.DeUsuario) Then
+                Return New ResultadoReporte With {
+                    .Estado = ResultadoOperacionReporte.Prohibido,
+                    .Mensaje = AlcanceReporte.MensajeFueraDeAlcance
+                }
+            End If
+
+            Return Nothing
         End Function
 
         Private Shared Function NormalizarVacio(valor As String) As String

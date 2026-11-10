@@ -62,10 +62,12 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 
 - **Dos servicios**: `ReporteGuardadoService` es CRUD puro sobre `REPORTES` (con ownership). `ReporteRegistrosService` ejecuta un reporte guardado (`spReporteGeneral` vía `IReporteGeneralRepository`) y devuelve/exporta sus registros. No hay endpoint de filtros libres: el viejo `POST /api/reportes/general` se eliminó porque dejaba ver registros de cualquier usuario sin control de rol.
 - **Qué registros ve cada uno** (`ReporteRegistrosService.Preparar`, siempre sobre un reporte propio, 403 si no):
-  - `Basico` (o sin rol): solo los propios; `REPORTES.DeUsuario` se ignora.
-  - `Avanzado`: los propios y los de todos los usuarios `Basico` (sin restricción por Centro). Si `DeUsuario` apunta a otro usuario → 403 `{mensaje}`.
-  - `Administrador`: todos, o solo `DeUsuario` si el reporte lo define.
-  - `DeCentro` del reporte filtra además por el Centro del Profile. Producto/actividad nulos se mandan como `0` (el SP lo interpreta como "todos").
+  - La regla vive en **un solo lugar**: `ReporteAlcanceService.ObtenerAlcance` (`AlcanceReporte`). La usan la ejecución/exportación (`Preparar`), el guardado (`ReporteGuardadoService.AplicarAlcance`) y `GET /api/reportes/usuarios`.
+  - `Basico` (o sin rol): solo los propios. `DeUsuario` y `DeCentro` se ignoran (ni siquiera se filtra por centro).
+  - `Avanzado`: los propios y los de usuarios `Basico` **de su mismo Centro** (Profile; sin Centro propio, solo los suyos). Si `DeUsuario` está fuera de ese conjunto → 403 `{mensaje}`. `DeCentro` se ignora aunque el reporte guardado traiga otro valor: siempre aplica su Centro. Armar el conjunto lee el Profile de cada `Basico` (no hay lectura en bloque).
+  - `Administrador`: todos, o solo `DeUsuario` si el reporte lo define; `DeCentro` (lista separada por coma) filtra por el Centro del Profile.
+  - Producto/actividad nulos se mandan como `0` (el SP lo interpreta como "todos").
+  - **Al guardar** (`POST`/`PUT /api/reportes`) no se confía en el frontend: `Basico` → `DeUsuario` y `DeCentro` se descartan (quedan en NULL); `Avanzado` → `DeCentro` se descarta y un `DeUsuario` fuera de su alcance da 403 `{mensaje}`; `Administrador` → se guardan tal cual.
 - **Qué campos ve cada uno** (`NivelDetalleReporte`, DTOs en `DTOs/Reportes/RegistroReporteDTO.vb`, cada nivel hereda del anterior):
   - `RegistroReporteBasicoDTO`: IDReg (para editar/borrar vía `/api/registros/{id}`), Fecha, Centro, Cod/Actividad, Pais, IdProducto/Producto, Horas, Minutos, Observaciones.
   - `RegistroReporteAvanzadoDTO` (Avanzado y Administrador): + Usuario, Legajo, CUIL, Jornada (= `Profile.Modalidad`).
@@ -124,11 +126,12 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 | PUT | `/api/registros/{id}` | JWT | Edición (403 si no es el dueño); aplica las mismas reglas que el alta sobre la fecha nueva. Además, salvo `Administrador`, la fecha **original** del registro tiene que estar dentro del período abierto del usuario (`CalcularFechaDesde`..hoy); si no, 400 `{mensaje}` |
 | DELETE | `/api/registros/{id}` | JWT | Baja (403 si no es el dueño). 400 `{mensaje}` si `PERMITIR_CARGAS` = False o, salvo `Administrador`, si el registro está fuera del período abierto del usuario |
 | GET | `/api/reportes` | JWT | Lista reportes guardados del usuario |
+| GET | `/api/reportes/usuarios` | JWT | Usuarios que quien llama puede elegir como `DeUsuario`: `[{ UserName }]` ordenado por nombre. `Administrador`: todos los habilitados (`IsApproved`); `Avanzado`: él y los `Basico` de su Centro; `Basico`: lista vacía |
 | GET | `/api/reportes/{id:guid}` | JWT | Detalle de un reporte guardado (403 si no es el dueño) |
 | GET | `/api/reportes/{id:guid}/registros?pagina=&tamanioPagina=` | JWT | Ejecuta el reporte guardado y devuelve una página de sus registros en `ResultadoPaginado` (`Items`, `TotalRegistros`, `Pagina`, `TamanioPagina`, `TotalPaginas`). `pagina` default 1, `tamanioPagina` default 50, máx 1000 (fuera de rango se ajusta, como `/api/registros`). Qué registros (por rol) y qué campos (Basico/Avanzado/Full) dependen de quién llama — ver "Dominio Reportes". 403 si no es el dueño o si un Avanzado pide un `DeUsuario` no permitido |
 | GET | `/api/reportes/{id:guid}/exportar` | JWT | Los mismos registros y columnas que `/registros`, como `.xlsx` (nombre = título del reporte) |
-| POST | `/api/reportes` | JWT | Crea un reporte guardado (IDRep = Guid nuevo) |
-| PUT | `/api/reportes/{id:guid}` | JWT | Edita (403 si no es el dueño) |
+| POST | `/api/reportes` | JWT | Crea un reporte guardado (IDRep = Guid nuevo). `DeUsuario`/`DeCentro` se ajustan al rol de quien guarda (ver "Dominio Reportes"); 403 `{mensaje}` si un Avanzado pide un `DeUsuario` fuera de su alcance |
+| PUT | `/api/reportes/{id:guid}` | JWT | Edita (403 si no es el dueño). Mismas reglas de `DeUsuario`/`DeCentro` que el alta |
 | DELETE | `/api/reportes/{id:guid}` | JWT | Borra (403 si no es el dueño) |
 | GET | `/api/usuarios/me` | JWT | Datos propios (Membership + Profile + roles) y `PuedeGestionarRemuneraciones` (Boolean: rol `Administrador` **y** usuario en `Utils.AccesoRemuneraciones`; el campo está en `UsuarioDTO`, así que también sale en las respuestas de `/api/usuarios`) |
 | PUT | `/api/usuarios/me` | JWT | Edita datos propios — **solo** Email y Comentario |

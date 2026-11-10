@@ -12,11 +12,24 @@ Public Class ReportesController
 
     Private ReadOnly servicioGuardados As IReporteGuardadoService
     Private ReadOnly servicioRegistros As IReporteRegistrosService
+    Private ReadOnly servicioAlcance As IReporteAlcanceService
 
-    Public Sub New(servicioGuardados As IReporteGuardadoService, servicioRegistros As IReporteRegistrosService)
+    Public Sub New(servicioGuardados As IReporteGuardadoService, servicioRegistros As IReporteRegistrosService, servicioAlcance As IReporteAlcanceService)
         Me.servicioGuardados = servicioGuardados
         Me.servicioRegistros = servicioRegistros
+        Me.servicioAlcance = servicioAlcance
     End Sub
+
+    ' Usuarios que quien llama puede elegir como DeUsuario de un reporte (Administrador: habilitados;
+    ' Avanzado: él y los Basico de su Centro; Basico: lista vacía). Ver ReporteAlcanceService.
+    <HttpGet>
+    <Route("api/reportes/usuarios")>
+    Public Function ListarUsuariosSeleccionables() As IHttpActionResult
+        Dim usuario = ObtenerUsuarioActual()
+        If String.IsNullOrEmpty(usuario) Then Return Unauthorized()
+
+        Return Ok(servicioAlcance.ListarUsuariosSeleccionables(usuario))
+    End Function
 
     <HttpGet>
     <Route("api/reportes")>
@@ -115,6 +128,8 @@ Public Class ReportesController
         Dim resultado = servicioGuardados.Crear(usuario, input)
 
         Select Case resultado.Estado
+            Case ResultadoOperacionReporte.Prohibido
+                Return Prohibido(resultado.Mensaje)
             Case ResultadoOperacionReporte.Fallo
                 Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
             Case Else
@@ -135,7 +150,7 @@ Public Class ReportesController
             Case ResultadoOperacionReporte.NoEncontrado
                 Return NotFound()
             Case ResultadoOperacionReporte.Prohibido
-                Return StatusCode(HttpStatusCode.Forbidden)
+                Return Prohibido(resultado.Mensaje)
             Case ResultadoOperacionReporte.Fallo
                 Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
             Case Else

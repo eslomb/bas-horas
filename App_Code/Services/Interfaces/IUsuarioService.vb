@@ -5,6 +5,7 @@ Namespace Services.Interfaces
         Function ObtenerPorUserName(userName As String) As UsuarioDTO
         Function Listar() As List(Of UsuarioDTO)
         Function ListarEquipo(userName As String) As List(Of UsuarioDTO)
+        Function ListarNombresEquipo(userName As String) As List(Of String)
         Function ActualizarPeriodosEquipo(userName As String, periodos As List(Of PeriodoEquipoInputDTO)) As ResultadoUsuario
         Function ActualizarPerfilPropio(userName As String, input As ActualizarPerfilPropioInputDTO) As ResultadoUsuario
         Function CrearUsuario(input As CrearUsuarioInputDTO) As ResultadoUsuario

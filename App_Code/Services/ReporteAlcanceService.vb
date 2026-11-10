@@ -6,10 +6,11 @@ Imports Services.Interfaces
 Namespace Services
     ' Alcance de un reporte para un usuario:
     '   Administrador -> sin restricción (UsuariosPermitidos = Nothing); DeUsuario y DeCentro (lista separada por coma) se respetan.
-    '   Avanzado      -> él mismo + los usuarios Basico de su mismo Centro (Profile). DeCentro se ignora: siempre aplica su Centro.
+    '   Avanzado      -> él mismo + su equipo (Profile.Dependencia = su Legajo; ver UsuarioService.ListarNombresEquipo).
+    '                    DeCentro se ignora: el equipo ya acota a quiénes ve.
     '   Basico        -> solo él mismo. DeUsuario y DeCentro se ignoran.
     Public Class AlcanceReporte
-        Public Const MensajeFueraDeAlcance As String = "Solo puede consultar sus propios registros y los de usuarios Basicos de su Centro."
+        Public Const MensajeFueraDeAlcance As String = "Solo puede consultar sus propios registros y los de su equipo."
 
         Public Property EsAdministrador As Boolean
         Public Property EsAvanzado As Boolean
@@ -25,9 +26,11 @@ Namespace Services
         Implements IReporteAlcanceService
 
         Private ReadOnly usuarios As IUsuarioRepository
+        Private ReadOnly servicioUsuarios As IUsuarioService
 
-        Public Sub New(usuarios As IUsuarioRepository)
+        Public Sub New(usuarios As IUsuarioRepository, servicioUsuarios As IUsuarioService)
             Me.usuarios = usuarios
+            Me.servicioUsuarios = servicioUsuarios
         End Sub
 
         Public Function ObtenerAlcance(usuario As String) As AlcanceReporte Implements IReporteAlcanceService.ObtenerAlcance
@@ -40,15 +43,8 @@ Namespace Services
             Dim esAvanzado = roles.Contains(Aplicacion.Grupos.Avanzado, StringComparer.OrdinalIgnoreCase)
             Dim permitidos As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase) From {usuario}
 
-            If esAvanzado Then
-                ' Un Profile por cada Basico: no hay forma de leer Profile en bloque. Sin Centro propio, solo se ve a sí mismo.
-                Dim centro = CentroDe(usuario)
-                If centro <> "" Then
-                    For Each basico In usuarios.ObtenerUsuariosEnRol(Aplicacion.Grupos.Basico)
-                        If centro.Equals(CentroDe(basico), StringComparison.OrdinalIgnoreCase) Then permitidos.Add(basico)
-                    Next
-                End If
-            End If
+            ' Sin Legajo propio no hay equipo: solo se ve a sí mismo.
+            If esAvanzado Then permitidos.UnionWith(servicioUsuarios.ListarNombresEquipo(usuario))
 
             Return New AlcanceReporte With {.EsAvanzado = esAvanzado, .UsuariosPermitidos = permitidos}
         End Function
@@ -70,12 +66,6 @@ Namespace Services
                 OrderBy(Function(n) n, StringComparer.OrdinalIgnoreCase).
                 Select(Function(n) New UsuarioSeleccionableDTO With {.UserName = n}).
                 ToList()
-        End Function
-
-        Private Function CentroDe(userName As String) As String
-            Dim perfil = usuarios.ObtenerPerfil(userName)
-            If perfil Is Nothing OrElse perfil.Centro Is Nothing Then Return ""
-            Return perfil.Centro.Trim()
         End Function
     End Class
 End Namespace

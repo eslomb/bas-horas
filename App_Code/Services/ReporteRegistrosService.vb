@@ -8,7 +8,7 @@ Namespace Services
     ' Registros de un reporte guardado (spReporteGeneral con los filtros del reporte), según quién los pide:
     '  - Qué registros ve (rol, ver ReporteAlcanceService):
     '      Basico        -> solo los propios (DeUsuario y DeCentro del reporte se ignoran).
-    '      Avanzado      -> los propios y los de usuarios Basico de su Centro (403 si DeUsuario está fuera; DeCentro se ignora).
+    '      Avanzado      -> los propios y los de su equipo (403 si DeUsuario está fuera; DeCentro se ignora).
     '      Administrador -> todos (o solo DeUsuario si el reporte lo define), filtrado por DeCentro si lo tiene.
     '  - Qué campos ve (nivel): Basico < Avanzado (Avanzado/Administrador) < Full (usuarios de Utils.AccesoRemuneraciones).
     Public Class ReporteRegistrosService
@@ -129,7 +129,7 @@ Namespace Services
             Dim filas = reporteGeneral.EjecutarReporteGeneral(reporte.Desde, reporte.Hasta, usuarioSP,
                                                               If(reporte.Producto_id, 0), If(reporte.Actividad_id, 0), reporte.CodPais)
 
-            ' Avanzado: solo él y los Basico de su Centro (eso ya aplica su Centro). Basico: el SP ya filtró por él.
+            ' Avanzado: solo él y su equipo. Basico: el SP ya filtró por él.
             If Not alcance.EsAdministrador Then
                 filas = filas.Where(Function(f) alcance.Permite(f.USUARIO)).ToList()
             End If

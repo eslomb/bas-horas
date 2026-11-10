@@ -21,7 +21,7 @@ Public Class ReportesController
     End Sub
 
     ' Usuarios que quien llama puede elegir como DeUsuario de un reporte (Administrador: habilitados;
-    ' Avanzado: él y los Basico de su Centro; Basico: lista vacía). Ver ReporteAlcanceService.
+    ' Avanzado: él y su equipo; Basico: lista vacía). Ver ReporteAlcanceService.
     <HttpGet>
     <Route("api/reportes/usuarios")>
     Public Function ListarUsuariosSeleccionables() As IHttpActionResult

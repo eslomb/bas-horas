@@ -33,14 +33,24 @@ Namespace Services
 
         ' Equipo: usuarios cuyo Dependencia es el Legajo de quien consulta (como usuarios-dependientes.aspx, pero
         ' con comparación exacta en vez de Contains). Sin legajo no hay equipo: si no, entrarían todos los que
-        ' tienen Dependencia vacía.
-        Public Function ListarEquipo(userName As String) As List(Of UsuarioDTO) Implements IUsuarioService.ListarEquipo
+        ' tienen Dependencia vacía. Única definición de "equipo": la usan ListarEquipo y el alcance de los reportes.
+        ' Solo lee el Profile de cada usuario (no roles ni el DTO completo).
+        Public Function ListarNombresEquipo(userName As String) As List(Of String) Implements IUsuarioService.ListarNombresEquipo
             Dim legajo = If(repo.ObtenerPerfil(userName).Legajo, "").Trim()
-            If legajo = "" Then Return New List(Of UsuarioDTO)
+            If legajo = "" Then Return New List(Of String)
 
-            Return Listar().
-                Where(Function(u) String.Equals(If(u.Dependencia, "").Trim(), legajo, StringComparison.OrdinalIgnoreCase)).
-                OrderBy(Function(u) u.UserName).
+            Return repo.ObtenerTodos().
+                Select(Function(u) u.UserName).
+                Where(Function(n) String.Equals(If(repo.ObtenerPerfil(n).Dependencia, "").Trim(), legajo, StringComparison.OrdinalIgnoreCase)).
+                OrderBy(Function(n) n, StringComparer.OrdinalIgnoreCase).
+                ToList()
+        End Function
+
+        Public Function ListarEquipo(userName As String) As List(Of UsuarioDTO) Implements IUsuarioService.ListarEquipo
+            Return ListarNombresEquipo(userName).
+                Select(Function(n) repo.ObtenerPorUserName(n)).
+                Where(Function(u) u IsNot Nothing).
+                Select(Function(u) MapearDTO(u)).
                 ToList()
         End Function
 
@@ -111,6 +121,9 @@ Namespace Services
 
             Dim rol As String = Nothing
             Dim errorValidacion = ValidarRolYHabilitado(input, rol)
+            If errorValidacion IsNot Nothing Then Return errorValidacion
+
+            errorValidacion = ValidarDependencia(input)
             If errorValidacion IsNot Nothing Then Return errorValidacion
 
             ' La política se chequea acá y no recién al cambiar la clave: ForzarNuevaPassword hace ResetPassword
@@ -195,6 +208,9 @@ Namespace Services
 
             Dim rol As String = Nothing
             Dim errorValidacion = ValidarRolYHabilitado(input, rol)
+            If errorValidacion IsNot Nothing Then Return errorValidacion
+
+            errorValidacion = ValidarDependencia(input)
             If errorValidacion IsNot Nothing Then Return errorValidacion
 
             If repo.ObtenerPorUserName(userName) IsNot Nothing Then
@@ -318,6 +334,20 @@ Namespace Services
             End If
             If Not repo.ExisteRol(rol) Then
                 Return Fallo("El rol '" & rol & "' no está configurado en el sistema.")
+            End If
+
+            Return Nothing
+        End Function
+
+        ' Un usuario no puede depender de sí mismo: la Dependencia es el Legajo de su superior, así que no puede ser
+        ' el Legajo que se está guardando (mismo criterio de comparación que el equipo: sin espacios ni mayúsculas).
+        ' Solo detecta el caso directo; no revisa ciclos entre varios usuarios (A depende de B y B de A).
+        Private Shared Function ValidarDependencia(input As ActualizarUsuarioInputDTO) As ResultadoUsuario
+            Dim legajo = If(input.Legajo, "").Trim()
+            Dim dependencia = If(input.Dependencia, "").Trim()
+
+            If legajo.Length > 0 AndAlso String.Equals(legajo, dependencia, StringComparison.OrdinalIgnoreCase) Then
+                Return Invalido("La dependencia no puede ser el legajo del propio usuario: un usuario no puede depender de sí mismo.")
             End If
 
             Return Nothing

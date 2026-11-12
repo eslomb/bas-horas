@@ -20,6 +20,12 @@ Namespace Repositories.EF
                 Where(Function(r) r.Usuario = usuario AndAlso r.Fecha >= desde AndAlso r.Fecha <= hasta)
         End Function
 
+        ' Mismo filtro que spReporteGeneral sin usuario/producto/actividad/país: rango inclusive y duración > 0.
+        Public Function ObtenerTodosEnRango(desde As Date, hasta As Date) As IQueryable(Of REGISTROS) Implements IRegistroRepository.ObtenerTodosEnRango
+            Return cntx.REGISTROS.AsNoTracking().
+                Where(Function(r) r.Fecha >= desde AndAlso r.Fecha <= hasta AndAlso r.Horas + r.Minutos > 0)
+        End Function
+
         Public Function ObtenerVistaPorId(idRegistro As Integer) As vRegistros Implements IRegistroRepository.ObtenerVistaPorId
             Return cntx.vRegistros.FirstOrDefault(Function(r) r.IDReg = idRegistro)
         End Function

@@ -1,0 +1,1 @@
+function e(e){return`$ ${e.toLocaleString(`es-AR`,{minimumFractionDigits:2,maximumFractionDigits:2})}`}export{e as t};

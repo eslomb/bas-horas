@@ -239,11 +239,11 @@ Namespace Services
             Return lista
         End Function
 
-        ' Costo = Remuneracion / DiasHabiles / Jornada x duración (mismo cálculo que app/reporte.aspx); vacío si falta algún dato.
+        ' Costo: ver Utils.CostoTarea (vacío si falta algún dato).
         Private Shared Sub CompletarCostos(dto As RegistroReporteFullDTO,
                                            diasPorMes As Dictionary(Of Integer, Integer),
                                            remuneracionesPorMes As Dictionary(Of String, Decimal))
-            Dim duracion = dto.Horas + (dto.Minutos / 60D)
+            Dim duracion = CostoTarea.Duracion(dto.Horas, dto.Minutos)
             dto.DuracionTarea = Math.Round(duracion, 2)
 
             Dim fecha = dto.FechaActividad
@@ -256,9 +256,7 @@ Namespace Services
                 dto.Remuneracion = remuneracion
             End If
 
-            If dto.Remuneracion.HasValue AndAlso dto.DiasHabiles.GetValueOrDefault() > 0 AndAlso dto.Jornada.GetValueOrDefault() > 0 Then
-                dto.CostoTarea = Decimal.Round(dto.Remuneracion.Value / dto.DiasHabiles.Value / dto.Jornada.Value * duracion, 2)
-            End If
+            dto.CostoTarea = CostoTarea.Calcular(dto.Remuneracion, dto.DiasHabiles, dto.Jornada, duracion)
         End Sub
 
         Private Function CargarDiasHabiles() As Dictionary(Of Integer, Integer)

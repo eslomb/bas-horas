@@ -49,6 +49,7 @@ Public Module DependencyConfig
         builder.RegisterType(Of FeedbackService)().As(Of IFeedbackService)().InstancePerRequest()
         builder.RegisterType(Of MonitoreoService)().As(Of IMonitoreoService)().InstancePerRequest()
         builder.RegisterType(Of AnalisisService)().As(Of IAnalisisService)().InstancePerRequest()
+        builder.RegisterType(Of CostoService)().As(Of ICostoService)().InstancePerRequest()
 
         Dim container = builder.Build()
         config.DependencyResolver = New AutofacWebApiDependencyResolver(container)

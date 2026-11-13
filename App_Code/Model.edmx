@@ -65,6 +65,18 @@
           <Property Name="Fecha" Type="datetime" Nullable="false" StoreGeneratedPattern="Computed" />
           <Property Name="Url" Type="nvarchar" MaxLength="2000" Nullable="false" />
         </EntityType>
+        <EntityType Name="PASSWORD_RESET_TOKENS">
+          <Key>
+            <PropertyRef Name="IdToken" />
+          </Key>
+          <Property Name="IdToken" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserName" Type="nvarchar" MaxLength="256" Nullable="false" />
+          <Property Name="TokenHash" Type="char" MaxLength="64" Nullable="false" />
+          <Property Name="Origen" Type="varchar" MaxLength="20" Nullable="false" />
+          <Property Name="FechaCreacion" Type="datetime" Nullable="false" StoreGeneratedPattern="Computed" />
+          <Property Name="FechaExpiracion" Type="datetime" Nullable="false" />
+          <Property Name="FechaUso" Type="datetime" />
+        </EntityType>
         <EntityType Name="PAISES">
           <Key>
             <PropertyRef Name="Codigo" />
@@ -217,6 +229,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySet Name="FEEDBACK" EntityType="Self.FEEDBACK" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="FERIADOS" EntityType="Self.FERIADOS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="MONITOREO" EntityType="Self.MONITOREO" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PASSWORD_RESET_TOKENS" EntityType="Self.PASSWORD_RESET_TOKENS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PAISES" EntityType="Self.PAISES" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PRODUCTOS" EntityType="Self.PRODUCTOS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="REGISTROS" EntityType="Self.REGISTROS" Schema="dbo" store:Type="Tables" />
@@ -299,6 +312,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
             <Parameter Name="CodPais" Mode="In" Type="String" />
           </FunctionImport>
           <EntitySet Name="MONITOREO" EntityType="BASHorasModel.MONITOREO" />
+          <EntitySet Name="PASSWORD_RESET_TOKENS" EntityType="BASHorasModel.PASSWORD_RESET_TOKENS" />
           <EntitySet Name="vRegistros" EntityType="BASHorasModel.vRegistros" />
         </EntityContainer>
         <EntityType Name="PAISES">
@@ -485,6 +499,18 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
           <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" annotation:StoreGeneratedPattern="Computed" />
           <Property Name="Url" Type="String" Nullable="false" MaxLength="2000" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="PASSWORD_RESET_TOKENS">
+          <Key>
+            <PropertyRef Name="IdToken" />
+          </Key>
+          <Property Name="IdToken" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserName" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="TokenHash" Type="String" Nullable="false" MaxLength="64" FixedLength="true" Unicode="false" />
+          <Property Name="Origen" Type="String" Nullable="false" MaxLength="20" FixedLength="false" Unicode="false" />
+          <Property Name="FechaCreacion" Type="DateTime" Nullable="false" Precision="3" annotation:StoreGeneratedPattern="Computed" />
+          <Property Name="FechaExpiracion" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="FechaUso" Type="DateTime" Precision="3" />
         </EntityType>
         <EntityType Name="vRegistros">
           <Key>
@@ -683,6 +709,19 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
                 <ScalarProperty Name="Fecha" ColumnName="Fecha" />
                 <ScalarProperty Name="Usuario" ColumnName="Usuario" />
                 <ScalarProperty Name="IDMonitoreo" ColumnName="IDMonitoreo" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="PASSWORD_RESET_TOKENS">
+            <EntityTypeMapping TypeName="BASHorasModel.PASSWORD_RESET_TOKENS">
+              <MappingFragment StoreEntitySet="PASSWORD_RESET_TOKENS">
+                <ScalarProperty Name="FechaUso" ColumnName="FechaUso" />
+                <ScalarProperty Name="FechaExpiracion" ColumnName="FechaExpiracion" />
+                <ScalarProperty Name="FechaCreacion" ColumnName="FechaCreacion" />
+                <ScalarProperty Name="Origen" ColumnName="Origen" />
+                <ScalarProperty Name="TokenHash" ColumnName="TokenHash" />
+                <ScalarProperty Name="UserName" ColumnName="UserName" />
+                <ScalarProperty Name="IdToken" ColumnName="IdToken" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

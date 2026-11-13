@@ -1,5 +1,5 @@
 Namespace Repositories.Interfaces
     Public Interface INotificadorUsuarios
-        Sub EnviarNuevaPassword(email As String, nuevaPassword As String)
+        Sub EnviarLinkRecuperacion(email As String, link As String, minutosValidez As Integer)
     End Interface
 End Namespace

@@ -36,6 +36,7 @@ Partial Public Class BASHorasEntities
     Public Overridable Property DIAS_HABILES() As DbSet(Of DIAS_HABILES)
     Public Overridable Property FEEDBACK() As DbSet(Of FEEDBACK)
     Public Overridable Property MONITOREO() As DbSet(Of MONITOREO)
+    Public Overridable Property PASSWORD_RESET_TOKENS() As DbSet(Of PASSWORD_RESET_TOKENS)
     Public Overridable Property vRegistros() As DbSet(Of vRegistros)
 
     Public Overridable Function spFechasUltimasTareas(usuario As String, cant As Nullable(Of Integer)) As ObjectResult(Of String)

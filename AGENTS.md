@@ -10,19 +10,19 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 - `App_Code/` se compila automáticamente en runtime/build por el motor de ASP.NET (cualquier `.vb` ahí dentro entra en un único ensamblado dinámico, salvo que se declare `<codeSubDirectories>` en `Web.config` para mezclar lenguajes — no está configurado, así que **todo `App_Code` debe ser VB.NET**).
 - Los paquetes NuGet se gestionan vía `packages.config` + copia de DLLs a `Bin/` (cada una con su `.dll.refresh`). **No hay forma de instalar paquetes por CLI** (`dotnet add package` / `nuget install` no aplican a este modelo) — siempre hay que pedirle al usuario que instale desde el NuGet Package Manager de Visual Studio y reportar qué se agregó.
 - Target framework: **.NET Framework 4.7.2**. Cualquier paquete nuevo hay que verificar en nuget.org que tenga binarios compatibles con `net45`-`net472` antes de instalar como "latest" (ver gotchas más abajo).
-- `app/` es la interfaz WebForms existente (ASPX + code-behind). **Nunca modificarla.** Es la UI en producción; el objetivo de este trabajo es una API nueva que corre en paralelo, sin tocar esa parte.
+- `app/` es la interfaz WebForms existente (ASPX + code-behind). **Nunca modificarla.** Es la UI en producción; el objetivo de este trabajo es una API nueva que corre en paralelo, sin tocar esa parte. **Única excepción autorizada:** la migración de contraseñas a `Hashed` (sección 3, "Contraseñas") obligó a cambios mínimos en `app/password.aspx.vb`, `app/usuario_detalle.aspx.vb` y, fuera de `app/`, en `login.aspx.vb` y `recuperaClave.aspx(.vb)`, porque usaban `GetPassword()` o guardaban la clave en una cookie; además se agregó `restablecerClave.aspx` (raíz del sitio) para fijar la clave nueva desde el link, porque los usuarios todavía no usan el login de la v2. No tomarlo como permiso general.
 
 ## 2. Dónde trabajar
 
 - **Todo el código nuevo de la API va en `App_Code/API/`, `App_Code/Repositories/`, `App_Code/Services/`, `App_Code/DTOs/`.**
-- `App_Code/Aplicacion.vb` (clases `Logica`, `Pagina*`, `Utilidades`) y `App_Code/Usuarios.vb` (clase `Aplicacion.Usuarios`) son la capa de negocio **preexistente, usada únicamente por `app/`**. La API **no depende de nada de `Aplicacion.vb`/`Usuarios.vb`** (ni `Logica`, ni `Usuarios`, ni `Utilidades`) — cada dominio de la API reimplementa lo que necesita en su propio Repository/Service/Utils. Esto mantiene `app/` y la API totalmente desacopladas: un cambio en una no puede romper la otra. (Hubo una excepción puntual reusando `Aplicacion.Utilidades.GenerarPassword` para generar passwords temporales, pero se reemplazó por `Utils.GeneradorPassword` — ver más abajo — así que la regla ya no tiene excepciones.)
+- `App_Code/Aplicacion.vb` (clases `Logica`, `Pagina*`, `Utilidades`) y `App_Code/Usuarios.vb` (clase `Aplicacion.Usuarios`) son la capa de negocio **preexistente, usada únicamente por `app/`**. La API **no depende de nada de `Aplicacion.vb`/`Usuarios.vb`** (ni `Logica`, ni `Usuarios`, ni `Utilidades`) — cada dominio de la API reimplementa lo que necesita en su propio Repository/Service/Utils. Esto mantiene `app/` y la API totalmente desacopladas: un cambio en una no puede romper la otra. (Hubo una excepción puntual reusando `Aplicacion.Utilidades.GenerarPassword` para generar passwords temporales; se reemplazó por `Utils.GeneradorPassword`, que a su vez se borró al pasar la recuperación a link temporal. La regla ya no tiene excepciones. En sentido contrario, `login.aspx.vb` sí usa `Services.RecuperacionPasswordService`, armado a mano sin DI, para el cambio obligatorio de claves cortas.)
 - `App_Code/Model.*` (`Model.edmx`, `Model.vb`, `Model.Context.vb`, `Model.Designer.vb`) es el modelo EF6 generado, compartido por `app/` y la API. Solo tocar `Model.edmx` para corregir mapeos EF genuinamente rotos (como se hizo una vez, ver gotcha #5) — nunca para lógica nueva específica de la API.
-- Tablas nuevas creadas para la API: su script `CREATE` (idempotente) va en `App_Data/Scripts/` (ASP.NET nunca sirve `App_Data`) — hay que correrlo a mano en cada ambiente antes de desplegar. Hoy: `FEEDBACK.sql` (crea la tabla), `MONITOREO.sql` (crea la tabla de visitas del frontend) y `REMUNERACIONES_UNIQUE.sql` (índice UNIQUE usuario+año+mes sobre una tabla existente; borra las repetidas idénticas y aborta sin cambios si hay repetidas con montos distintos). La entidad se agrega al EDMX (SSDL + CSDL + mapeo) y a `Model.vb`/`Model.Context.vb` igual que lo haría "Update Model from Database".
+- Tablas nuevas creadas para la API: su script `CREATE` (idempotente) va en `App_Data/Scripts/` (ASP.NET nunca sirve `App_Data`) — hay que correrlo a mano en cada ambiente antes de desplegar. Hoy: `FEEDBACK.sql` (crea la tabla), `MONITOREO.sql` (crea la tabla de visitas del frontend), `PASSWORD_RESET_TOKENS.sql` (tokens de un solo uso para restablecer la contraseña; solo guarda el SHA-256 del token) y `REMUNERACIONES_UNIQUE.sql` (índice UNIQUE usuario+año+mes sobre una tabla existente; borra las repetidas idénticas y aborta sin cambios si hay repetidas con montos distintos). La entidad se agrega al EDMX (SSDL + CSDL + mapeo) y a `Model.vb`/`Model.Context.vb` igual que lo haría "Update Model from Database".
 - Base de datos: SQL Server en `LUCI\SQLEXPRESS`, base `BASHoras`, connection strings en `Web.config` (`LocalSqlServer` para Membership, `BASHorasEntities` para EF). Usuario `sa` / contraseña `sa`. Hay `sqlcmd` disponible en la máquina de desarrollo (`C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\SQLCMD.EXE` o `180`), útil para inspeccionar SPs reales cuando EF tira errores de mapeo:
   ```
   sqlcmd -S "LUCI\SQLEXPRESS" -U sa -P sa -d BASHoras -Q "SELECT OBJECT_DEFINITION(OBJECT_ID('dbo.<NombreSP>'))"
   ```
-- `Web.config` → `appSettings` → `EnviarMailsHabilitado` (default `true`): en `false`, `NotificadorUsuarios.EnviarNuevaPassword` no manda el mail — en cambio, deja constancia (fecha, email, password en texto plano) en `<temp del sistema>\BASHoras\recuperacion-password-dev.log` (`Path.GetTempPath()`, fuera de la carpeta del sitio a propósito, para que un deploy/backup de la carpeta no se lleve passwords de paso). El valor por defecto commiteado es `true` (seguro para producción) — cada quien lo pone en `false` en su `Web.config` local si lo necesita. No hay ningún framework de logging centralizado en este proyecto (ni log4net/NLog/Event Log) — esto es solo una conveniencia puntual de desarrollo, no un patrón a replicar para logging general sin discutirlo antes.
+- `Web.config` → `appSettings` → `EnviarMailsHabilitado` (default `true`): en `false`, `NotificadorUsuarios.EnviarLinkRecuperacion` no manda el mail. En cambio, deja constancia (fecha, email, link de recuperación con su token) en `<temp del sistema>\BASHoras\recuperacion-password-dev.log`. Va en `Path.GetTempPath()`, fuera de la carpeta del sitio a propósito, para que un deploy/backup de la carpeta no se lleve links vigentes de paso. Ojo, depende de quién corre el sitio: con IIS Express es el temp del usuario (`%LOCALAPPDATA%\Temp\BASHoras\`); con IIS completo (`w3wp`, ej. `bashoras.local`) suele ser `C:\Windows\Temp\BASHoras\`. El valor por defecto commiteado es `true` (seguro para producción) — cada quien lo pone en `false` en su `Web.config` local si lo necesita. No hay ningún framework de logging centralizado en este proyecto (ni log4net/NLog/Event Log) — esto es solo una conveniencia puntual de desarrollo, no un patrón a replicar para logging general sin discutirlo antes.
 
 ## 3. Arquitectura de la API
 
@@ -44,7 +44,7 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
   | `App_Code/Services/` | `Services` |
   | `App_Code/API/` | (sin namespace, global) |
   | `App_Code/API/auth/` | `Auth` |
-  | `App_Code/Utils/` | `Utils` — helpers puros reusables entre capas (ej. `GeneradorPassword`), sin acceso a datos ni dependencias de `Aplicacion.vb` |
+  | `App_Code/Utils/` | `Utils` — helpers puros reusables entre capas (ej. `TokenSeguro`), sin acceso a datos ni dependencias de `Aplicacion.vb` |
 
 - **Patrón por dominio** (replicar para dominios nuevos, ej. Usuarios): `XxxDTO` (lectura), `XxxInputDTO` (alta/edición, sin campos controlados por el servidor como IDs o el usuario dueño), `ResultadoXxx` + enum `ResultadoOperacionXxx` (`Ok`/`NoEncontrado`/`Prohibido`/`Duplicado`/`Fallo` según aplique — ojo, **`Error` es palabra reservada en VB**, no usarla como nombre de miembro de enum), `IXxxRepository`/`XxxRepository`, `IXxxService`/`XxxService`, `XxxController` heredando de `ControladorApiBase`. Registrar las nuevas piezas en `DependencyConfig.vb`.
 - **`ControladorApiBase`** (`App_Code/API/ControladorApiBase.vb`, `MustInherit`, hereda `ApiController`) centraliza `ObtenerUsuarioActual()` — lee el username del `ClaimsPrincipal` del JWT. Todo controller que necesite saber "quién está logueado" hereda de acá en vez de `ApiController` directo.
@@ -79,11 +79,49 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 - **CORS y descargas**: `WebApiConfig` expone `Content-Disposition` (`corsPolicy.ExposedHeaders.Add(...)`; la propiedad es de solo lectura, no se puede asignar) para que el frontend lea el nombre del `.xlsx`.
 - `DTOs.Reportes.FiltroReporte` ya no lo usa la API, pero **no borrarlo**: lo usan `Aplicacion.vb` y `app/reporte.aspx.vb`.
 
+### Contraseñas (Membership `Hashed`) y recuperación por link
+
+- **Formato**: `passwordFormat="Hashed"`, `enablePasswordRetrieval="false"`, `enablePasswordReset="true"` y `<membership hashAlgorithmType="HMACSHA256">` fijado explícito. **No cambiar `hashAlgorithmType` nunca**: invalida todas las claves ya hasheadas. `GetPassword()` ya no existe (lanza excepción); no volver a usarlo. `minRequiredPasswordLength="8"` (antes 2).
+- **`Web.config` está en `.gitignore`**: estos cambios no viajan con el código, hay que aplicarlos a mano en cada ambiente:
+  - el `<membership>` de arriba;
+  - en `<profile>`: `<add name="PasswordMigrada" type="Boolean" defaultValue="false" />`;
+  - en `appSettings`:
+    - `UrlRestablecerPassword`: pantalla que recibe `?token=`. Hoy `~/restablecerClave.aspx` (con `~/`, `ArmarLinkRestablecer` le antepone el host del pedido actual, así el mismo valor sirve en todos los ambientes); cuando los usuarios pasen al login de la v2, poner la URL absoluta de la pantalla del frontend;
+    - `MinutosValidezLinkPassword` (default 60);
+    - `ForzarCambioPasswordCorta` (default false);
+    - `MigracionPasswordsHabilitada` (default false).
+- **Migración de las claves existentes (una vez por ambiente)**:
+  1. Backup de la base.
+  2. Correr `PASSWORD_RESET_TOKENS.sql`.
+  3. Deploy del código y del `Web.config` completo (`Hashed`, mínimo 8). La migración no pasa por la política de contraseñas, así que el mínimo puede subir desde el primer deploy.
+  4. `MigracionPasswordsHabilitada=true` → `POST /api/admin/migrar-passwords` → revisar `Fallidos` → volver a false. Hacerlo enseguida del deploy: hasta entonces las claves siguen en texto plano (funcionan igual).
+  5. Verificar `SELECT PasswordFormat, COUNT(*) FROM aspnet_Membership GROUP BY PasswordFormat` (todo en 1).
+  6. Cuando se decida, `ForzarCambioPasswordCorta=true`.
+
+  La migración **conserva las claves** (nadie tiene que hacer nada). Es idempotente (solo toma `PasswordFormat = 0`) y, por cada usuario, verifica que la clave hasheada valide; si no valida, la deja en texto plano como estaba. En local se migraron 138 de 138 sin fallos (2026-11-13). Cuando todos los ambientes estén migrados, borrar `MigracionPasswordsController` y su service/repo.
+- **Por qué la migración no usa la API pública de Membership** (gotcha #11): `SqlMembershipProvider` guarda el formato **por usuario**, y `ChangePassword` re-graba con el formato y el salt que ya tenía ese usuario. Probado: `ChangePassword(x, x)` sobre un usuario Clear lo deja en `PasswordFormat = 0`. Por eso `MigracionPasswordRepository` calcula el hash con el `EncodePassword` privado del provider (reflexión, mismo algoritmo que `ValidateUser`) y escribe directo en `aspnet_Membership`. Corolario: un usuario que quedara en Clear sigue en Clear aunque cambie la clave por cualquiera de las pantallas. `CreateUser` sí usa el formato configurado.
+- **Recuperación** (`RecuperacionPasswordService`, tabla `PASSWORD_RESET_TOKENS`):
+  - El token es de 256 bits (`Utils.TokenSeguro`) y en la base se guarda solo su SHA-256.
+  - Solo vale el último token emitido: emitir uno invalida los pendientes del usuario.
+  - Es de un solo uso (`UPDATE … WHERE FechaUso IS NULL`).
+  - Tope de 3 pedidos por mail por usuario por hora; los que exceden se ignoran sin avisar.
+  - Usuarios inexistentes o deshabilitados no reciben nada, y la respuesta es siempre la misma (no revela qué emails existen).
+  - Las cuentas bloqueadas sí reciben el link, y al usarlo se desbloquean.
+  - **Páginas WebForms** (mientras los usuarios no usen la v2): `recuperaClave.aspx` pide el email y llama a `Solicitar` (mismo mensaje genérico que la API); `restablecerClave.aspx?token=` valida el token y llama a `Restablecer`. Las dos, y `login.aspx`, arman el service con `RecuperacionPasswordPaginas.CrearServicio(contexto)` (`App_Code/RecuperacionPasswordPaginas.vb`), sin DI.
+- **Cambio obligatorio de claves cortas** (`RequiereCambioObligatorio`, única regla para la API y `login.aspx`). Aplica si se cumplen las tres condiciones:
+  - `ForzarCambioPasswordCorta=true`;
+  - la clave ingresada tiene menos de `max(8, minRequiredPasswordLength)` caracteres (solo se puede saber en el login, el único momento con la clave en claro);
+  - `Profile.PasswordMigrada = False`.
+
+  En ese caso no se inicia sesión. La API responde 403 `{mensaje, codigo:"CambioPasswordRequerido", tokenCambio}` (token de 15 min), y `login.aspx` redirige a `UrlRestablecerPassword?token=…`.
+- **`PasswordMigrada = True`** se marca en toda escritura de contraseña: `/me/password`, el PUT de admin con `Password`, el alta (API y legacy), `restablecer-password`, `app/password.aspx` y `app/usuario_detalle.aspx`. La migración **no** la marca a propósito.
+- La cookie "Recordarme" de `login.aspx` guarda solo el usuario (antes guardaba la clave en texto plano). Las cookies viejas con `pwd` se reescriben al abrir el login.
+
 ## 4. Superficie actual de la API
 
 | Método | Ruta | Auth | Descripción |
 |---|---|---|---|
-| POST | `/api/auth/login` | — | Login contra Membership, devuelve JWT |
+| POST | `/api/auth/login` | — | Login contra Membership, devuelve JWT. Con `ForzarCambioPasswordCorta=true` y clave corta sin cambiar: 403 `{mensaje, codigo:"CambioPasswordRequerido", tokenCambio}` sin JWT (ver "Contraseñas") |
 | POST | `/api/auth/refresh` | JWT | Renueva el token |
 | POST | `/api/auth/suplantar` | JWT + rol `Administrador` | Body `{ UserName }`. Devuelve `{ token, username }` del otro usuario sin su contraseña: el token dura 6 h (`HorasSuplantacion`) y lleva el claim `act` con el administrador. Errores con `{mensaje}`: 400 si es él mismo o el usuario está deshabilitado/bloqueado, 404 si no existe, 403 si el destino es `Administrador` o si `appSettings` → `UsuariosSuplantacion` (lista separada por coma; vacía = todos los administradores) no incluye al que llama. Volver a la cuenta propia lo hace el frontend con su token original |
 | GET | `/api/test` | — | Endpoint de ejemplo/smoke test |
@@ -157,9 +195,12 @@ Esto **no** es un proyecto moderno con `.csproj`/`.vbproj`. Es un **ASP.NET Webs
 | DELETE | `/api/feedback/{id:int}` | JWT | Baja: el autor o un `Administrador` (moderación); 403 si no |
 | POST | `/api/monitoreo` | JWT | Registra una visita del frontend. Body `MonitoreoInputDTO`: solo `Url` (obligatoria, ≤ 2000). `Usuario` sale del token y `Fecha` la pone la base (`DEFAULT GETDATE()`, `Computed` en el EDMX). 400 `{mensaje}` si es inválido. Sin lectura individual, edición ni baja a propósito |
 | GET | `/api/monitoreo?desde=&hasta=` | JWT + rol `Administrador` | Cantidad de visitas agrupada por usuario, URL y día: `[{Usuario, Url, Fecha, Cantidad}]` (más reciente primero). `desde`/`hasta` `yyyy-MM-dd`, inclusive; por defecto `hasta` = hoy y `desde` = 7 días antes de `hasta`; 400 `{mensaje}` si desde > hasta. Agrupa en SQL con `DbFunctions.TruncateTime` (en EF Core sería `.Date`) |
-| POST | `/api/auth/recuperar-password` | — | Genera una password nueva (`Utils.GeneradorPassword`) y la manda por mail al usuario encontrado por email |
+| POST | `/api/auth/recuperar-password` | — | Body `{Email}`. Si el usuario existe y está habilitado, le manda por mail un link de un solo uso (`UrlRestablecerPassword?token=…`, vence a los `MinutosValidezLinkPassword`). **Siempre 200** con el mismo mensaje, exista o no el email (antes daba 404/403). 400 si falta el email; 500 `{mensaje}` si falla el envío |
+| POST | `/api/auth/restablecer-password/validar` | — | Body `{Token}`. 200 si está vigente; 400 `{mensaje}` si no existe, ya se usó, venció o el usuario está deshabilitado |
+| POST | `/api/auth/restablecer-password` | — | Body `{Token, Password}`. Fija la clave (desbloquea la cuenta si estaba bloqueada), marca `PasswordMigrada` e invalida los tokens del usuario. 400 `{mensaje}` si el token no es válido o la clave no cumple la política; 500 si falla Membership |
+| POST | `/api/admin/migrar-passwords` | JWT + rol `Administrador` | **Temporal.** Migración única Clear → Hashed conservando las claves. 404 si `MigracionPasswordsHabilitada` ≠ true; 409 si el provider no está en `Hashed`. Devuelve `{Migrados, Fallidos:[{UserName, Motivo}]}` |
 
-**Pendiente / fuera de alcance por ahora (no asumir que existe):** baja (borrado) de usuarios, y un endpoint dedicado de reseteo de contraseña ajena (hoy un Admin puede fijarla con el campo `Password` de `PUT /api/usuarios/{userName}`, además del self-service "olvidé mi contraseña" de `/api/auth/recuperar-password`). El alta de usuarios (`POST /api/usuarios`) y el cambio de rol (campo `Rol` del PUT) ya existen.
+**Pendiente / fuera de alcance por ahora (no asumir que existe):** baja (borrado) de usuarios, y un endpoint dedicado de reseteo de contraseña ajena (hoy un Admin puede fijarla con el campo `Password` de `PUT /api/usuarios/{userName}`, además del self-service por link de `/api/auth/recuperar-password`). El alta de usuarios (`POST /api/usuarios`) y el cambio de rol (campo `Rol` del PUT) ya existen.
 
 ## 5. Documentación / Swagger
 
@@ -178,10 +219,13 @@ Swashbuckle clásico (paquetes `Swashbuckle` + `Swashbuckle.Core`, **no** `Swash
 5. **`Error` es palabra reservada en VB.NET** — no usarla como nombre de miembro de enum (se detectó al nombrar un estado de resultado; se renombró a `Fallo`).
 6. **El instalador de Swashbuckle asume Web Application Project**: deja un `SwaggerConfig.cs` bajo `App_Start/`, carpeta que este Website Project no compila automáticamente. Se reescribió a mano en VB.NET en `App_Code/API/SwaggerConfig.vb`.
 7. **Membership no tiene un "set password" directo** sin conocer la actual (`ChangePassword` la pide, `ResetPassword()` genera una propia que no podés elegir). Para forzar una password nuestra (ej. recuperación por mail) el truco es encadenar `Dim temporal = usuario.ResetPassword() : usuario.ChangePassword(temporal, nuevaPassword)` — ver `UsuarioRepository.ForzarNuevaPassword`.
-8. **`Aplicacion.Utilidades.GenerarPassword` usa `System.Random`**, no es criptográficamente seguro (y `New Random()` creado en threads distintos casi al mismo tiempo puede repetir semilla). Para generar passwords desde la API se usa `Utils.GeneradorPassword.Generar(longitud)` (`App_Code/Utils/GeneradorPassword.vb`), que usa `RandomNumberGenerator` y garantiza al menos una minúscula/mayúscula/dígito.
+8. **`Aplicacion.Utilidades.GenerarPassword` usa `System.Random`**, no es criptográficamente seguro (y `New Random()` creado en threads distintos casi al mismo tiempo puede repetir semilla). La API ya no genera passwords (la recuperación es por link); para cualquier valor aleatorio de seguridad usar `RandomNumberGenerator`, como `Utils.TokenSeguro`.
 9. **IDOR en `GET /{id}`**: al construir Registros y Reportes, las lecturas por ID no chequeaban ownership (solo las mutaciones) — cualquier usuario autenticado podía leer el registro/reporte de otro con solo cambiar el id. Corregido en `RegistroService.ObtenerPorId` / `ReporteGuardadoService.ObtenerPorId` (ahora devuelven `ResultadoRegistro`/`ResultadoReporte` con `Prohibido` igual que las mutaciones). Al agregar un `GET /{id}` nuevo sobre datos de un usuario, no repetir el error: aplicar el chequeo de ownership desde el principio.
 10. **Encoding de los `.vb`**: guardar los archivos nuevos o editados por agentes en **UTF-8 con BOM** si contienen tildes o ñ (mensajes, comentarios o strings). Sin BOM, el compilador de ASP.NET (App_Code) los lee como ANSI y los textos que devuelve la API salen rotos (`está` -> `estÃ¡`). Verificado con `RegistroService.vb`. Los archivos solo ASCII no lo necesitan. No quitar el BOM a los existentes.
+11. **`passwordFormat` es por usuario en `SqlMembershipProvider`**: cambiar el `Web.config` solo afecta a usuarios nuevos (`CreateUser`). `ChangePassword` re-graba con el formato que ya tenía el usuario (verificado), así que no sirve para migrar (ver "Contraseñas"). No asumir que `ResetPassword` cambia el formato. Además, `Hashed` con `enablePasswordRetrieval="true"` hace que el provider no inicialice (se cae todo el sitio).
+12. **`ChangePassword` tira `ArgumentException`** (no `MembershipPasswordException`) cuando la clave nueva es más corta que `minRequiredPasswordLength`. Capturar ambas como "no cumple la política" (`UsuarioService.CambiarPassword`, `app/password.aspx.vb`).
+13. **Probar páginas WebForms con curl desde Git Bash**: el `__VIEWSTATE` empieza con `/wEP…` y MSYS lo convierte en una ruta (`C:/Program Files/Git/wEP…`), lo que da "Estado de vista no válido". Usar `MSYS_NO_PATHCONV=1`.
 
 ## 7. Qué información darme si algo de esto cambió
 
-Si el usuario dice que ya no es cierto algo de acá (por ejemplo, si el proyecto migra a Web Application Project con `.vbproj`, si cambia el motor de DI, o si se migran paquetes), verificar contra el estado real del repo antes de asumir que esta guía sigue vigente — está escrita a partir del estado al 2026-10-01.
+Si el usuario dice que ya no es cierto algo de acá (por ejemplo, si el proyecto migra a Web Application Project con `.vbproj`, si cambia el motor de DI, o si se migran paquetes), verificar contra el estado real del repo antes de asumir que esta guía sigue vigente — está escrita a partir del estado al 2026-10-01 (sección "Contraseñas": 2026-11-13).

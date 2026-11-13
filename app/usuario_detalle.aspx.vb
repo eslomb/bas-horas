@@ -101,8 +101,16 @@ Partial Class app_usuario_detalle
         'en modo edicion actualiza los datos ingresados
 
         If Not usuario Is Nothing Then
-            If Not String.IsNullOrEmpty(tb_edicion_clave.Text) And Not usuario.IsLockedOut Then
-                usuario.ChangePassword(usuario.GetPassword(), tb_edicion_clave.Text)
+            Dim cambiaClave As Boolean = Not String.IsNullOrEmpty(tb_edicion_clave.Text) And Not usuario.IsLockedOut
+            If cambiaClave Then
+                ' Con passwordFormat=Hashed no hay GetPassword: se resetea a una temporal y se cambia por la elegida.
+                ' El largo se valida antes, para no dejar la cuenta con la temporal si la nueva no cumple.
+                If tb_edicion_clave.Text.Length < Membership.MinRequiredPasswordLength Then
+                    notificacion = String.Format("La contraseña debe tener al menos {0} caracteres. No se guardó ningún cambio.", Membership.MinRequiredPasswordLength)
+                    tipoNotificacion = TiposNotificacion.Advertencia
+                    Return
+                End If
+                usuario.ChangePassword(usuario.ResetPassword(), tb_edicion_clave.Text)
             End If
             usuario.Email = tb_edicion_email.Text
             usuario.Comment = tb_edicion_comentarios.Text
@@ -134,6 +142,7 @@ Partial Class app_usuario_detalle
             End If
             _profile.CUIL = tb_edicion_CUIL.Text
             _profile.Dependencia = tb_edicion_dependencia.Text
+            If cambiaClave Then _profile.PasswordMigrada = True
 
             _profile.Save()
             'If _profile.Legajo <> tb_edicion_legajo.Text.Trim Then
@@ -189,6 +198,7 @@ Partial Class app_usuario_detalle
             End If
             _profile.CUIL = tb_alta_CUIL.Text
             _profile.Dependencia = tb_alta_dependencia.Text
+            _profile.PasswordMigrada = True
 
             _profile.Save()
             notificacion = "Usuario creado"

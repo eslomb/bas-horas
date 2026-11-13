@@ -33,9 +33,10 @@ Partial Class login
             Dim nuevaCookie As HttpCookie = Request.Cookies(nombreDeCookie)
             If Request.Cookies(nombreDeCookie) IsNot Nothing Then
                 tb_usr.Text = nuevaCookie("usr")
-                tb_pwd.Attributes.Add("value", nuevaCookie("pwd"))
                 Login2.RememberMeSet = True
                 lb_norecordar.Visible = True
+                ' Cookies viejas guardaban también la clave en texto plano: se reescriben solo con el usuario.
+                If nuevaCookie("pwd") IsNot Nothing Then guardarCookieRecordar(nuevaCookie("usr"))
             End If
             tb_usr.Focus()
 
@@ -48,7 +49,7 @@ Partial Class login
         If Not String.IsNullOrEmpty(usrName) Then
             usr = Membership.GetUser(usrName)
             If Membership.ValidateUser(usr.UserName, tb_pwd.Text) Then
-                ingresar()
+                If Not requiereCambioObligatorio() Then ingresar()
             Else
                 resultado = "No se encontró una cuenta con los datos ingresados. <br>Por favor, verificá los mismos e intentá nuevamente."
 
@@ -74,16 +75,35 @@ Partial Class login
         Response.Redirect("app/redirector.aspx" + qsReturnPath)
     End Sub
 
+    ' Misma regla que POST api/auth/login (ForzarCambioPasswordCorta): clave corta sin cambiar desde la
+    ' migración a Hashed. No se inicia sesión; se redirige a restablecer la contraseña con un token temporal.
+    Private Function requiereCambioObligatorio() As Boolean
+        Using contexto As New BASHorasEntities()
+            Dim servicio = RecuperacionPasswordPaginas.CrearServicio(contexto)
+
+            If Not servicio.RequiereCambioObligatorio(usr.UserName, tb_pwd.Text) Then Return False
+
+            Dim link As String = servicio.ArmarLinkRestablecer(servicio.EmitirTokenCambioObligatorio(usr.UserName))
+            Response.Redirect(link, False)
+            Context.ApplicationInstance.CompleteRequest()
+            Return True
+        End Using
+    End Function
+
+    ' La cookie "Recordarme" guarda solo el usuario, nunca la clave.
     Private Sub modificarCookie()
-        Dim nuevaCookie As HttpCookie = New HttpCookie(nombreDeCookie)
         If cb_Remember.Checked Then
-            nuevaCookie("usr") = tb_usr.Text
-            nuevaCookie("pwd") = tb_pwd.Text
-            nuevaCookie.Expires = Date.Now.AddDays(30)
-            Response.Cookies.Add(nuevaCookie)
+            guardarCookieRecordar(tb_usr.Text)
         Else
             eliminarCookie()
         End If
+    End Sub
+
+    Private Sub guardarCookieRecordar(ByVal usuario As String)
+        Dim nuevaCookie As HttpCookie = New HttpCookie(nombreDeCookie)
+        nuevaCookie("usr") = usuario
+        nuevaCookie.Expires = Date.Now.AddDays(30)
+        Response.Cookies.Add(nuevaCookie)
     End Sub
 
     Private Sub informarBloqueo()
@@ -107,7 +127,6 @@ Partial Class login
     Protected Sub lb_norecordarOnClick(ByVal sender As Object, ByVal e As EventArgs)
         eliminarCookie()
         tb_usr.Text = ""
-        tb_pwd.Attributes.Add("value", "")
         cb_Remember.Checked = False
         lb_norecordar.Visible = False
     End Sub

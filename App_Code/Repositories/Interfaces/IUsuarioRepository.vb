@@ -16,5 +16,6 @@ Namespace Repositories.Interfaces
         Sub ActualizarPerfil(perfil As ProfileCommon)
         Function CambiarPassword(userName As String, passwordActual As String, passwordNueva As String) As Boolean
         Function ForzarNuevaPassword(userName As String, nuevaPassword As String) As Boolean
+        Sub MarcarPasswordMigrada(userName As String)
     End Interface
 End Namespace

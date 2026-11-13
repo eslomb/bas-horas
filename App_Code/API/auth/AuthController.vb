@@ -13,10 +13,10 @@ Namespace Auth
     Public Class AuthController
         Inherits ApiController
 
-        Private ReadOnly servicioUsuarios As IUsuarioService
+        Private ReadOnly servicioRecuperacion As IRecuperacionPasswordService
 
-        Public Sub New(servicioUsuarios As IUsuarioService)
-            Me.servicioUsuarios = servicioUsuarios
+        Public Sub New(servicioRecuperacion As IRecuperacionPasswordService)
+            Me.servicioRecuperacion = servicioRecuperacion
         End Sub
 
         <HttpPost>
@@ -34,6 +34,16 @@ Namespace Auth
 
             If Not isValid Then
                 Return Unauthorized()
+            End If
+
+            ' Clave corta que nadie cambió desde la migración a Hashed (solo con ForzarCambioPasswordCorta=true):
+            ' no se entrega JWT, sino un token para la pantalla de restablecer contraseña.
+            If servicioRecuperacion.RequiereCambioObligatorio(userName, request.Password) Then
+                Return Content(HttpStatusCode.Forbidden, New With {
+                    .mensaje = "Tenés que cambiar tu contraseña antes de ingresar.",
+                    .codigo = "CambioPasswordRequerido",
+                    .tokenCambio = servicioRecuperacion.EmitirTokenCambioObligatorio(userName)
+                })
             End If
 
             Dim tokenString As String = GenerarTokenJWT(userName)
@@ -143,25 +153,51 @@ Namespace Auth
         <HttpPost>
         <Route("api/auth/recuperar-password")>
         Public Function RecuperarPassword(<FromBody> request As RecuperarPasswordInputDTO) As IHttpActionResult
-            If request Is Nothing OrElse String.IsNullOrEmpty(request.Email) Then
-                Return BadRequest("Debe proporcionar el email.")
+            If request Is Nothing OrElse String.IsNullOrWhiteSpace(request.Email) Then
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = "Debe proporcionar el email."})
             End If
 
-            Dim resultado = servicioUsuarios.RecuperarPassword(request.Email)
+            Try
+                servicioRecuperacion.Solicitar(request.Email)
+            Catch
+                Return Content(HttpStatusCode.InternalServerError, New With {.mensaje = "No se pudo procesar el pedido. Intentá nuevamente más tarde."})
+            End Try
 
-            Select Case resultado
-                Case ResultadoRecuperarPassword.Ok
-                    Return Ok(New With {.mensaje = "Se envió una nueva contraseña al email registrado."})
-                Case ResultadoRecuperarPassword.EmailNoEncontrado
-                    Return Content(HttpStatusCode.NotFound, New With {.mensaje = "No existe un usuario con ese email."})
-                Case ResultadoRecuperarPassword.UsuarioInactivo
-                    Return Content(HttpStatusCode.Forbidden, New With {.mensaje = "El usuario no está activo."})
-                Case ResultadoRecuperarPassword.CuentaBloqueada
-                    Return Content(HttpStatusCode.Forbidden, New With {.mensaje = "La cuenta está bloqueada."})
+            ' Misma respuesta exista o no el email, para no revelar qué cuentas existen.
+            Return Ok(New With {.mensaje = "Si el email está registrado, te enviamos un link para restablecer la contraseña."})
+        End Function
+
+        <HttpPost>
+        <Route("api/auth/restablecer-password/validar")>
+        Public Function ValidarTokenRestablecer(<FromBody> request As ValidarTokenInputDTO) As IHttpActionResult
+            If request Is Nothing OrElse Not servicioRecuperacion.Validar(request.Token) Then
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = MensajeTokenInvalido})
+            End If
+            Return Ok()
+        End Function
+
+        <HttpPost>
+        <Route("api/auth/restablecer-password")>
+        Public Function RestablecerPassword(<FromBody> request As RestablecerPasswordInputDTO) As IHttpActionResult
+            If request Is Nothing Then
+                Return Content(HttpStatusCode.BadRequest, New With {.mensaje = "Debe enviar el token y la nueva contraseña."})
+            End If
+
+            Select Case servicioRecuperacion.Restablecer(request.Token, request.Password)
+                Case ResultadoRestablecerPassword.Ok
+                    Return Ok(New With {.mensaje = "La contraseña se cambió. Ya podés ingresar con la nueva."})
+                Case ResultadoRestablecerPassword.TokenInvalido
+                    Return Content(HttpStatusCode.BadRequest, New With {.mensaje = MensajeTokenInvalido})
+                Case ResultadoRestablecerPassword.PasswordNoValida
+                    Return Content(HttpStatusCode.BadRequest, New With {.mensaje = String.Format(
+                        "La contraseña no cumple con la política requerida (mínimo {0} caracteres).",
+                        Membership.MinRequiredPasswordLength)})
                 Case Else
-                    Return Content(HttpStatusCode.InternalServerError, New With {.mensaje = "No se pudo generar la nueva contraseña."})
+                    Return Content(HttpStatusCode.InternalServerError, New With {.mensaje = "No se pudo cambiar la contraseña. Pedí un link nuevo."})
             End Select
         End Function
+
+        Private Const MensajeTokenInvalido As String = "El link no es válido, ya se usó o venció. Pedí uno nuevo."
 
         ' el frontend vuelve solo a la cuenta del administrador al mismo plazo
         Private Const HorasSuplantacion As Integer = 6

@@ -58,6 +58,16 @@ Partial Public Class MONITOREO
     Public Property Url As String
 
 End Class
+Partial Public Class PASSWORD_RESET_TOKENS
+    Public Property IdToken As Integer
+    Public Property UserName As String
+    Public Property TokenHash As String
+    Public Property Origen As String
+    Public Property FechaCreacion As Date
+    Public Property FechaExpiracion As Date
+    Public Property FechaUso As Nullable(Of Date)
+
+End Class
 Partial Public Class PAISES
     Public Property Codigo As String
     Public Property Pais As String

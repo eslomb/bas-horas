@@ -1,18 +1,18 @@
 ﻿Imports System.Configuration
 Imports System.IO
+Imports System.Web
 Imports Repositories.Interfaces
 
 Namespace Repositories.Email
-    ' Encapsula el armado/envío del mail de recuperación de contraseña sobre la clase Correo
-    ' (misma idea que recuperaClave.aspx.vb, separada en su propia clase para uso desde la API).
+    ' Encapsula el armado/envío del mail de recuperación de contraseña sobre la clase Correo.
     Public Class NotificadorUsuarios
         Implements INotificadorUsuarios
 
         Private Const NombreArchivoLogDesarrollo As String = "recuperacion-password-dev.log"
 
-        Public Sub EnviarNuevaPassword(email As String, nuevaPassword As String) Implements INotificadorUsuarios.EnviarNuevaPassword
+        Public Sub EnviarLinkRecuperacion(email As String, link As String, minutosValidez As Integer) Implements INotificadorUsuarios.EnviarLinkRecuperacion
             If Not EnviarMailsHabilitado() Then
-                RegistrarEnLogDeDesarrollo(email, nuevaPassword)
+                RegistrarEnLogDeDesarrollo(email, link)
                 Return
             End If
 
@@ -22,10 +22,14 @@ Namespace Repositories.Email
             c.De = "BASHoras <respuestaautomatica@bas.com.ar>"
             c.Para = email
 
+            Dim linkHtml = HttpUtility.HtmlAttributeEncode(link)
             Dim msg As String = ""
             msg += "<h4>Mensaje de BASHoras</h4><br>"
-            msg += "Tu nueva clave de acceso es: " & nuevaPassword & "<br><br><br>"
-            msg += "No respondas este mensaje ya que ha sido generado automáticamente. Si crees que lo recibiste por error, por favor ignoralo.<hr>"
+            msg += "Recibimos un pedido para restablecer tu contraseña. Para elegir una nueva, ingresá a este link:<br><br>"
+            msg += "<a href=""" & linkHtml & """>" & linkHtml & "</a><br><br>"
+            msg += "El link vence en " & minutosValidez & " minutos y sirve una sola vez. "
+            msg += "Si no lo pediste vos, ignorá este mensaje: tu contraseña actual sigue funcionando.<br><br><br>"
+            msg += "No respondas este mensaje ya que ha sido generado automáticamente.<hr>"
 
             c.Mensaje = msg
             c.enviar()
@@ -41,12 +45,12 @@ Namespace Repositories.Email
             Return habilitado
         End Function
 
-        ' Con el envío de mails deshabilitado (desarrollo), deja constancia acá para poder ver la password generada.
+        ' Con el envío de mails deshabilitado (desarrollo), deja constancia acá para poder usar el link.
         ' Se escribe en el temp del sistema (fuera de la carpeta del sitio) para que un deploy/backup de la carpeta
-        ' del sitio nunca se lleve passwords en texto plano de paso.
-        Private Sub RegistrarEnLogDeDesarrollo(email As String, nuevaPassword As String)
+        ' del sitio nunca se lleve links vigentes de paso.
+        Private Sub RegistrarEnLogDeDesarrollo(email As String, link As String)
             Dim linea = String.Format("{0:yyyy-MM-dd HH:mm:ss} | {1} | {2}" & Environment.NewLine,
-                                       DateTime.Now, email, nuevaPassword)
+                                       DateTime.Now, email, link)
 
             Dim carpetaLog = Path.Combine(Path.GetTempPath(), "BASHoras")
             Directory.CreateDirectory(carpetaLog)

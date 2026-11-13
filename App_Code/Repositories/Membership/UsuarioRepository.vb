@@ -111,5 +111,15 @@ Namespace Repositories.Membership
             Dim passwordTemporal = usuario.ResetPassword()
             Return usuario.ChangePassword(passwordTemporal, nuevaPassword)
         End Function
+
+        ' Profile.PasswordMigrada = True: la clave se fijó después de pasar a Hashed, así que ya no entra
+        ' en el cambio obligatorio de claves cortas (ForzarCambioPasswordCorta).
+        Public Sub MarcarPasswordMigrada(userName As String) Implements IUsuarioRepository.MarcarPasswordMigrada
+            Dim perfil = ObtenerPerfil(userName)
+            If perfil.PasswordMigrada Then Return
+
+            perfil.PasswordMigrada = True
+            perfil.Save()
+        End Sub
     End Class
 End Namespace

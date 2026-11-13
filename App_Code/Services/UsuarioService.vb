@@ -9,14 +9,10 @@ Namespace Services
     Public Class UsuarioService
         Implements IUsuarioService
 
-        Private Const LongitudPasswordGenerada As Integer = 8
-
         Private ReadOnly repo As IUsuarioRepository
-        Private ReadOnly notificador As INotificadorUsuarios
 
-        Public Sub New(repo As IUsuarioRepository, notificador As INotificadorUsuarios)
+        Public Sub New(repo As IUsuarioRepository)
             Me.repo = repo
-            Me.notificador = notificador
         End Sub
 
         Public Function ObtenerPorUserName(userName As String) As UsuarioDTO Implements IUsuarioService.ObtenerPorUserName
@@ -179,6 +175,8 @@ Namespace Services
 
             Dim perfil = repo.ObtenerPerfil(userName)
             AplicarPerfil(perfil, input)
+            ' Clave puesta después de pasar a Hashed: ya no entra en el cambio obligatorio de claves cortas.
+            If cambiaPassword Then perfil.PasswordMigrada = True
 
             Try
                 repo.ActualizarPerfil(perfil)
@@ -242,6 +240,7 @@ Namespace Services
                 paso = "guardar el perfil"
                 Dim perfil = repo.ObtenerPerfil(userName)
                 AplicarPerfil(perfil, input)
+                perfil.PasswordMigrada = True
                 repo.ActualizarPerfil(perfil)
 
                 paso = "asignar el rol"
@@ -256,42 +255,21 @@ Namespace Services
         Public Function CambiarPassword(userName As String, input As CambiarPasswordInputDTO) As ResultadoCambioPassword Implements IUsuarioService.CambiarPassword
             Try
                 Dim exito = repo.CambiarPassword(userName, input.PasswordActual, input.PasswordNueva)
-                Return If(exito, ResultadoCambioPassword.Ok, ResultadoCambioPassword.PasswordActualIncorrecta)
-            Catch ex As MembershipPasswordException
+                If Not exito Then Return ResultadoCambioPassword.PasswordActualIncorrecta
+            Catch ex As Exception When TypeOf ex Is MembershipPasswordException OrElse TypeOf ex Is ArgumentException
+                ' SqlMembershipProvider tira ArgumentException si la nueva es más corta que minRequiredPasswordLength.
                 Return ResultadoCambioPassword.PasswordNoValida
             Catch
                 Return ResultadoCambioPassword.Fallo
             End Try
-        End Function
 
-        Public Function RecuperarPassword(email As String) As ResultadoRecuperarPassword Implements IUsuarioService.RecuperarPassword
-            Dim usuario = repo.ObtenerPorEmail(email)
-
-            If usuario Is Nothing Then
-                Return ResultadoRecuperarPassword.EmailNoEncontrado
-            End If
-
-            If Not usuario.IsApproved Then
-                Return ResultadoRecuperarPassword.UsuarioInactivo
-            End If
-
-            If usuario.IsLockedOut Then
-                Return ResultadoRecuperarPassword.CuentaBloqueada
-            End If
-
-            Dim nuevaPassword = GeneradorPassword.Generar(LongitudPasswordGenerada)
-
+            ' La clave ya cambió: si no se puede guardar la marca, a lo sumo se le vuelve a pedir el cambio.
             Try
-                If Not repo.ForzarNuevaPassword(usuario.UserName, nuevaPassword) Then
-                    Return ResultadoRecuperarPassword.Fallo
-                End If
-
-                notificador.EnviarNuevaPassword(usuario.Email, nuevaPassword)
+                repo.MarcarPasswordMigrada(userName)
             Catch
-                Return ResultadoRecuperarPassword.Fallo
             End Try
 
-            Return ResultadoRecuperarPassword.Ok
+            Return ResultadoCambioPassword.Ok
         End Function
 
         Private Shared ReadOnly RolesPermitidos As String() = {

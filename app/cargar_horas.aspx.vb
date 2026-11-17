@@ -50,7 +50,7 @@ Partial Class app_cargar_horas
     Protected Sub Page_Load(sender As Object, e As EventArgs) Handles Me.Load
 
         If Not IsPostBack Then
-            If usuarioEsBasico Or usuarioEsAdmin Then
+            If usuarioEsBasico Or usuarioEsAdmin Or usuarioEsAvanzado Then
                 pnl_novedad.Visible = True
             End If
 

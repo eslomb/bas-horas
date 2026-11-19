@@ -6,5 +6,6 @@ Namespace DTOs.Feedback
         Public Property Comentario As String
         Public Property Tipo As String
         Public Property Fecha As Date
+        Public Property Respuesta As String
     End Class
 End Namespace

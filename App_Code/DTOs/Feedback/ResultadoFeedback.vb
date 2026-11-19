@@ -4,6 +4,7 @@ Namespace DTOs.Feedback
         NoEncontrado
         Prohibido
         Invalido
+        YaRespondido
         Fallo
     End Enum
 

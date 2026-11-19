@@ -44,6 +44,7 @@ Partial Public Class FEEDBACK
     Public Property Comentario As String
     Public Property Tipo As String
     Public Property Fecha As Date
+    Public Property Respuesta As String
 
 End Class
 Partial Public Class FERIADOS
@@ -58,6 +59,14 @@ Partial Public Class MONITOREO
     Public Property Url As String
 
 End Class
+Partial Public Class PAISES
+    Public Property Codigo As String
+    Public Property Pais As String
+    Public Property Preferido As Nullable(Of Boolean)
+
+    Public Overridable Property REGISTROS As ICollection(Of REGISTROS) = New HashSet(Of REGISTROS)
+
+End Class
 Partial Public Class PASSWORD_RESET_TOKENS
     Public Property IdToken As Integer
     Public Property UserName As String
@@ -66,14 +75,6 @@ Partial Public Class PASSWORD_RESET_TOKENS
     Public Property FechaCreacion As Date
     Public Property FechaExpiracion As Date
     Public Property FechaUso As Nullable(Of Date)
-
-End Class
-Partial Public Class PAISES
-    Public Property Codigo As String
-    Public Property Pais As String
-    Public Property Preferido As Nullable(Of Boolean)
-
-    Public Overridable Property REGISTROS As ICollection(Of REGISTROS) = New HashSet(Of REGISTROS)
 
 End Class
 Partial Public Class PRODUCTOS

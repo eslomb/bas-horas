@@ -32,6 +32,7 @@ Public Module DependencyConfig
         builder.RegisterType(Of PasswordResetTokenRepository)().As(Of IPasswordResetTokenRepository)().InstancePerRequest()
         builder.RegisterType(Of MigracionPasswordRepository)().As(Of IMigracionPasswordRepository)().InstancePerRequest()
         builder.RegisterType(Of FeedbackRepository)().As(Of IFeedbackRepository)().InstancePerRequest()
+        builder.RegisterType(Of NotificadorFeedback)().As(Of INotificadorFeedback)().InstancePerRequest()
         builder.RegisterType(Of MonitoreoRepository)().As(Of IMonitoreoRepository)().InstancePerRequest()
         builder.RegisterType(Of AnalisisRepository)().As(Of IAnalisisRepository)().InstancePerRequest()
 

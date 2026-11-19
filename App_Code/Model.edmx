@@ -47,7 +47,8 @@
           <Property Name="Email" Type="nvarchar" MaxLength="256" />
           <Property Name="Comentario" Type="nvarchar" MaxLength="2000" Nullable="false" />
           <Property Name="Tipo" Type="varchar" MaxLength="20" Nullable="false" />
-          <Property Name="Fecha" Type="datetime" Nullable="false" StoreGeneratedPattern="Computed" />
+          <Property Name="Fecha" Type="datetime" Nullable="false" />
+          <Property Name="Respuesta" Type="nvarchar(max)" />
         </EntityType>
         <EntityType Name="FERIADOS">
           <Key>
@@ -65,6 +66,14 @@
           <Property Name="Fecha" Type="datetime" Nullable="false" StoreGeneratedPattern="Computed" />
           <Property Name="Url" Type="nvarchar" MaxLength="2000" Nullable="false" />
         </EntityType>
+        <EntityType Name="PAISES">
+          <Key>
+            <PropertyRef Name="Codigo" />
+          </Key>
+          <Property Name="Codigo" Type="nchar" MaxLength="2" Nullable="false" />
+          <Property Name="Pais" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="Preferido" Type="bit" />
+        </EntityType>
         <EntityType Name="PASSWORD_RESET_TOKENS">
           <Key>
             <PropertyRef Name="IdToken" />
@@ -76,14 +85,6 @@
           <Property Name="FechaCreacion" Type="datetime" Nullable="false" StoreGeneratedPattern="Computed" />
           <Property Name="FechaExpiracion" Type="datetime" Nullable="false" />
           <Property Name="FechaUso" Type="datetime" />
-        </EntityType>
-        <EntityType Name="PAISES">
-          <Key>
-            <PropertyRef Name="Codigo" />
-          </Key>
-          <Property Name="Codigo" Type="nchar" MaxLength="2" Nullable="false" />
-          <Property Name="Pais" Type="nvarchar" MaxLength="50" Nullable="false" />
-          <Property Name="Preferido" Type="bit" />
         </EntityType>
         <EntityType Name="PRODUCTOS">
           <Key>
@@ -229,8 +230,8 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySet Name="FEEDBACK" EntityType="Self.FEEDBACK" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="FERIADOS" EntityType="Self.FERIADOS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="MONITOREO" EntityType="Self.MONITOREO" Schema="dbo" store:Type="Tables" />
-          <EntitySet Name="PASSWORD_RESET_TOKENS" EntityType="Self.PASSWORD_RESET_TOKENS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PAISES" EntityType="Self.PAISES" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="PASSWORD_RESET_TOKENS" EntityType="Self.PASSWORD_RESET_TOKENS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PRODUCTOS" EntityType="Self.PRODUCTOS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="REGISTROS" EntityType="Self.REGISTROS" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="REMUNERACIONES" EntityType="Self.REMUNERACIONES" Schema="dbo" store:Type="Tables" />
@@ -302,7 +303,6 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySet Name="FERIADOS" EntityType="BASHorasModel.FERIADOS" />
           <EntitySet Name="REMUNERACIONES" EntityType="BASHorasModel.REMUNERACIONES" />
           <EntitySet Name="DIAS_HABILES" EntityType="BASHorasModel.DIAS_HABILES" />
-          <EntitySet Name="FEEDBACK" EntityType="BASHorasModel.FEEDBACK" />
           <FunctionImport Name="spReporteGeneral" ReturnType="Collection(BASHorasModel.spReporteGeneral_Result)">
             <Parameter Name="Desde" Mode="In" Type="DateTime" />
             <Parameter Name="Hasta" Mode="In" Type="DateTime" />
@@ -314,6 +314,7 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <EntitySet Name="MONITOREO" EntityType="BASHorasModel.MONITOREO" />
           <EntitySet Name="PASSWORD_RESET_TOKENS" EntityType="BASHorasModel.PASSWORD_RESET_TOKENS" />
           <EntitySet Name="vRegistros" EntityType="BASHorasModel.vRegistros" />
+          <EntitySet Name="FEEDBACK" EntityType="BASHorasModel.FEEDBACK" />
         </EntityContainer>
         <EntityType Name="PAISES">
           <Key>
@@ -462,17 +463,6 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Name="Mes" Type="Int32" Nullable="false" />
           <Property Name="CantDias" Type="Int32" Nullable="false" />
         </EntityType>
-        <EntityType Name="FEEDBACK">
-          <Key>
-            <PropertyRef Name="IDFeedback" />
-          </Key>
-          <Property Name="IDFeedback" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
-          <Property Name="Email" Type="String" MaxLength="256" FixedLength="false" Unicode="true" />
-          <Property Name="Comentario" Type="String" Nullable="false" MaxLength="2000" FixedLength="false" Unicode="true" />
-          <Property Name="Tipo" Type="String" Nullable="false" MaxLength="20" FixedLength="false" Unicode="false" />
-          <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" annotation:StoreGeneratedPattern="Computed" />
-        </EntityType>
         <ComplexType Name="spReporteGeneral_Result">
           <Property Type="Int32" Name="IDReg" Nullable="false" />
           <Property Type="DateTime" Name="FECHA_ACTIVIDAD" Nullable="false" Precision="23" />
@@ -541,6 +531,18 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
           <Property Name="Pais" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="true" />
           <Property Name="CodProducto" Type="String" Nullable="false" MaxLength="10" FixedLength="false" Unicode="false" />
           <Property Name="Producto" Type="String" Nullable="false" MaxLength="400" FixedLength="false" Unicode="true" />
+        </EntityType>
+        <EntityType Name="FEEDBACK">
+          <Key>
+            <PropertyRef Name="IDFeedback" />
+          </Key>
+          <Property Name="IDFeedback" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Usuario" Type="String" Nullable="false" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="256" FixedLength="false" Unicode="true" />
+          <Property Name="Comentario" Type="String" Nullable="false" MaxLength="2000" FixedLength="false" Unicode="true" />
+          <Property Name="Tipo" Type="String" Nullable="false" MaxLength="20" FixedLength="false" Unicode="false" />
+          <Property Name="Fecha" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Respuesta" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
         </EntityType>
       </Schema>
     </edmx:ConceptualModels>
@@ -668,18 +670,6 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-          <EntitySetMapping Name="FEEDBACK">
-            <EntityTypeMapping TypeName="BASHorasModel.FEEDBACK">
-              <MappingFragment StoreEntitySet="FEEDBACK">
-                <ScalarProperty Name="Fecha" ColumnName="Fecha" />
-                <ScalarProperty Name="Tipo" ColumnName="Tipo" />
-                <ScalarProperty Name="Comentario" ColumnName="Comentario" />
-                <ScalarProperty Name="Email" ColumnName="Email" />
-                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
-                <ScalarProperty Name="IDFeedback" ColumnName="IDFeedback" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
           <FunctionImportMapping FunctionImportName="spReporteGeneral" FunctionName="BASHorasModel.Store.spReporteGeneral">
             <ResultMapping>
               <ComplexTypeMapping TypeName="BASHorasModel.spReporteGeneral_Result">
@@ -742,6 +732,19 @@ advertencia 6002: La tabla o vista 'BASHoras.dbo.vRegistros' no tiene definida n
                 <ScalarProperty Name="idActividad" ColumnName="idActividad" />
                 <ScalarProperty Name="idProducto" ColumnName="idProducto" />
                 <ScalarProperty Name="IDReg" ColumnName="IDReg" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="FEEDBACK">
+            <EntityTypeMapping TypeName="BASHorasModel.FEEDBACK">
+              <MappingFragment StoreEntitySet="FEEDBACK">
+                <ScalarProperty Name="Respuesta" ColumnName="Respuesta" />
+                <ScalarProperty Name="Fecha" ColumnName="Fecha" />
+                <ScalarProperty Name="Tipo" ColumnName="Tipo" />
+                <ScalarProperty Name="Comentario" ColumnName="Comentario" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="Usuario" ColumnName="Usuario" />
+                <ScalarProperty Name="IDFeedback" ColumnName="IDFeedback" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

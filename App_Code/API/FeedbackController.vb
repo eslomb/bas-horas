@@ -78,6 +78,30 @@ Public Class FeedbackController
                 Return StatusCode(HttpStatusCode.Forbidden)
             Case ResultadoOperacionFeedback.Invalido
                 Return BadRequest(resultado.Mensaje)
+            Case ResultadoOperacionFeedback.YaRespondido
+                Return Content(HttpStatusCode.Conflict, resultado.Mensaje)
+            Case ResultadoOperacionFeedback.Fallo
+                Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
+            Case Else
+                Return Ok(resultado.Feedback)
+        End Select
+    End Function
+
+    <HttpPut>
+    <Route("api/feedback/{id:int}/respuesta")>
+    <JwtAuthorize(Roles:="Administrador")>
+    Public Function Responder(id As Integer, <FromBody> input As FeedbackRespuestaInputDTO) As IHttpActionResult
+        If input Is Nothing Then Return BadRequest("Debe enviar la respuesta.")
+
+        Dim resultado = servicio.Responder(id, input)
+
+        Select Case resultado.Estado
+            Case ResultadoOperacionFeedback.NoEncontrado
+                Return NotFound()
+            Case ResultadoOperacionFeedback.Invalido
+                Return BadRequest(resultado.Mensaje)
+            Case ResultadoOperacionFeedback.YaRespondido
+                Return Content(HttpStatusCode.Conflict, resultado.Mensaje)
             Case ResultadoOperacionFeedback.Fallo
                 Return Content(HttpStatusCode.InternalServerError, resultado.Mensaje)
             Case Else

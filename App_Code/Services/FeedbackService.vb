@@ -8,6 +8,8 @@ Namespace Services
         Implements IFeedbackService
 
         Private Const LongitudMaximaComentario As Integer = 2000
+        ' La columna es nvarchar(max): el límite lo pone la aplicación (igual que el formulario de Nuxt).
+        Private Const LongitudMaximaRespuesta As Integer = 2000
         Private Const LongitudMaximaEmail As Integer = 256
 
         ' Mismos valores que el CHECK CK_FEEDBACK_Tipo de la tabla.
@@ -15,10 +17,12 @@ Namespace Services
 
         Private ReadOnly repo As IFeedbackRepository
         Private ReadOnly usuarios As IUsuarioRepository
+        Private ReadOnly notificador As INotificadorFeedback
 
-        Public Sub New(repo As IFeedbackRepository, usuarios As IUsuarioRepository)
+        Public Sub New(repo As IFeedbackRepository, usuarios As IUsuarioRepository, notificador As INotificadorFeedback)
             Me.repo = repo
             Me.usuarios = usuarios
+            Me.notificador = notificador
         End Sub
 
         ' Administrador ve el de todos (o el de deUsuario si se indica); el resto, solo el propio.
@@ -86,6 +90,14 @@ Namespace Services
                 Return New ResultadoFeedback With {.Estado = ResultadoOperacionFeedback.Prohibido}
             End If
 
+            ' Una vez respondido, el comentario queda fijo: la respuesta se refiere a ese texto.
+            If Not String.IsNullOrWhiteSpace(entidad.Respuesta) Then
+                Return New ResultadoFeedback With {
+                    .Estado = ResultadoOperacionFeedback.YaRespondido,
+                    .Mensaje = "El comentario ya fue respondido y no se puede modificar."
+                }
+            End If
+
             Dim invalido = AplicarInput(entidad, usuario, input)
             If invalido IsNot Nothing Then Return invalido
 
@@ -94,6 +106,52 @@ Namespace Services
             Catch
                 Return New ResultadoFeedback With {.Estado = ResultadoOperacionFeedback.Fallo, .Mensaje = "No se pudo actualizar el comentario."}
             End Try
+
+            Return New ResultadoFeedback With {.Estado = ResultadoOperacionFeedback.Ok, .Feedback = MapearDTO(entidad)}
+        End Function
+
+        ' Solo Administrador (lo restringe el controller); el autor no la puede tocar.
+        ' Se responde una sola vez: con una respuesta ya guardada no se edita ni se borra (el mail ya salió).
+        Public Function Responder(id As Integer, input As FeedbackRespuestaInputDTO) As ResultadoFeedback Implements IFeedbackService.Responder
+            Dim entidad = repo.ObtenerPorId(id)
+
+            If entidad Is Nothing Then
+                Return New ResultadoFeedback With {.Estado = ResultadoOperacionFeedback.NoEncontrado}
+            End If
+
+            If Not String.IsNullOrWhiteSpace(entidad.Respuesta) Then
+                Return New ResultadoFeedback With {
+                    .Estado = ResultadoOperacionFeedback.YaRespondido,
+                    .Mensaje = "El comentario ya tiene una respuesta y no se puede modificar."
+                }
+            End If
+
+            Dim respuesta = If(input.Respuesta, "").Trim()
+            If respuesta.Length = 0 Then Return Invalido("La respuesta es obligatoria.")
+            If respuesta.Length > LongitudMaximaRespuesta Then
+                Return Invalido("La respuesta puede tener hasta " & LongitudMaximaRespuesta & " caracteres.")
+            End If
+
+            entidad.Respuesta = respuesta
+
+            Try
+                repo.Actualizar(entidad)
+            Catch
+                Return New ResultadoFeedback With {.Estado = ResultadoOperacionFeedback.Fallo, .Mensaje = "No se pudo guardar la respuesta."}
+            End Try
+
+            ' El mail va después de guardar y solo si el comentario tiene un email al que escribir.
+            ' Si falla, la respuesta igual quedó guardada (y ya no se puede volver a responder).
+            If Not String.IsNullOrWhiteSpace(entidad.Email) Then
+                Try
+                    notificador.EnviarRespuesta(entidad.Email, entidad.Respuesta, entidad.Comentario)
+                Catch
+                    Return New ResultadoFeedback With {
+                        .Estado = ResultadoOperacionFeedback.Fallo,
+                        .Mensaje = "La respuesta se guardó, pero no se pudo enviar el mail a " & entidad.Email & "."
+                    }
+                End Try
+            End If
 
             Return New ResultadoFeedback With {.Estado = ResultadoOperacionFeedback.Ok, .Feedback = MapearDTO(entidad)}
         End Function
@@ -175,7 +233,8 @@ Namespace Services
                 .Email = f.Email,
                 .Comentario = f.Comentario,
                 .Tipo = f.Tipo,
-                .Fecha = f.Fecha
+                .Fecha = f.Fecha,
+                .Respuesta = f.Respuesta
             }
         End Function
     End Class

@@ -15,3 +15,11 @@ BEGIN
 
     CREATE INDEX IX_FEEDBACK_Usuario ON dbo.FEEDBACK (Usuario);
 END
+GO
+
+-- Respuesta de un Administrador (PUT /api/feedback/{id}/respuesta). NULL = sin responder.
+-- Idempotente: solo la agrega si no existe.
+IF COL_LENGTH('dbo.FEEDBACK', 'Respuesta') IS NULL
+BEGIN
+    ALTER TABLE dbo.FEEDBACK ADD Respuesta nvarchar(max) NULL;
+END

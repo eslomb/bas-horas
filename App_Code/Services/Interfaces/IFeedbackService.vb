@@ -6,6 +6,7 @@ Namespace Services.Interfaces
         Function ObtenerPorId(id As Integer, usuario As String, esAdministrador As Boolean) As ResultadoFeedback
         Function Crear(usuario As String, input As FeedbackInputDTO) As ResultadoFeedback
         Function Actualizar(id As Integer, usuario As String, input As FeedbackInputDTO) As ResultadoFeedback
+        Function Responder(id As Integer, input As FeedbackRespuestaInputDTO) As ResultadoFeedback
         Function Eliminar(id As Integer, usuario As String, esAdministrador As Boolean) As ResultadoFeedback
     End Interface
 End Namespace
